@@ -37,7 +37,6 @@
 		"express-rate-limit": "^8.7.0",
 		"google-auth-library": "^11.0.2",
 		"googleapis": "^178.0.0",
-		"helmet": "^8.3.0",
 		"hpp": "^0.2.3",
 		"http-status": "^2.1.0",
 		"jsonwebtoken": "^9.0.3",

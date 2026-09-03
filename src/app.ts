@@ -1,15 +1,14 @@
 import compression from "compression";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
-import * as helmetModule from "helmet";
 import hpp from "hpp";
 import { config } from "./config/index.js";
 import { prisma } from "./lib/prisma/index.js";
 import { redisClient } from "./lib/redis/index.js";
 
 const app = express();
+
 app.disable("x-powered-by");
-app.use(helmetModule.default());
 
 app.use(
 	cors({

@@ -46,3 +46,5 @@ generated/prisma/
 Thumbs.db
 Desktop.ini
 *.local
+.vercel
+.env*
