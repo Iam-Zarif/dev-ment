@@ -1,0 +1,765 @@
+{
+	"info": {
+		"_postman_id": "9d29b650-8d92-4d50-a84c-devment-assessment",
+		"name": "Dev-ment - Assessment APIs",
+		"description": "Recruiter Assessment Draft, Question Attach, Publish and Credit Flow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5001/api/v1"
+		},
+		{
+			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "questionId",
+			"value": ""
+		},
+		{
+			"key": "secondQuestionId",
+			"value": ""
+		},
+		{
+			"key": "assessmentId",
+			"value": ""
+		},
+		{
+			"key": "assessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "secondAssessmentQuestionId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Create Draft Assessment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\n    \"Node.js\",\n    \"TypeScript\",\n    \"PostgreSQL\"\n  ],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3,\n  \"applicationDeadline\": \"2026-09-10T17:59:59.000Z\",\n  \"opensAt\": \"2026-09-08T04:00:00.000Z\",\n  \"closesAt\": \"2026-09-12T17:59:59.000Z\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Assessment created as DRAFT\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.id).to.be.a(\"string\");",
+							"  pm.expect(json.data.status).to.eql(\"DRAFT\");",
+							"});",
+							"",
+							"if (json.success && json.data?.id) {",
+							"  pm.collectionVariables.set(\"assessmentId\", json.data.id);",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Get All Assessments",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments?page=1&limit=10&sortBy=createdAt&sortOrder=desc",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments"],
+					"query": [
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						},
+						{
+							"key": "sortBy",
+							"value": "createdAt"
+						},
+						{
+							"key": "sortOrder",
+							"value": "desc"
+						}
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Paginated assessment list returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.items).to.be.an(\"array\");",
+							"  pm.expect(json.data.meta).to.be.an(\"object\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Filter Draft Assessments",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments?status=DRAFT&difficulty=INTERMEDIATE&search=Backend&page=1&limit=10",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments"],
+					"query": [
+						{
+							"key": "status",
+							"value": "DRAFT"
+						},
+						{
+							"key": "difficulty",
+							"value": "INTERMEDIATE"
+						},
+						{
+							"key": "search",
+							"value": "Backend"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "limit",
+							"value": "10"
+						}
+					]
+				}
+			}
+		},
+		{
+			"name": "04 - Get Assessment By ID",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Correct assessment returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.id).to.eql(pm.collectionVariables.get(\"assessmentId\"));",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "05 - Attach First Question",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "questions"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Question attached\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.id).to.be.a(\"string\");",
+							"});",
+							"",
+							"if (json.success && json.data?.id) {",
+							"  pm.collectionVariables.set(\"assessmentQuestionId\", json.data.id);",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "06 - Attach Second Question",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"questionId\": \"{{secondQuestionId}}\",\n  \"marks\": 15\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "questions"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"if (json.success && json.data?.id) {",
+							"  pm.collectionVariables.set(\"secondAssessmentQuestionId\", json.data.id);",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "07 - Update Assessment Question Marks",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"marks\": 20\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}",
+					"host": ["{{baseUrl}}"],
+					"path": [
+						"assessments",
+						"{{assessmentId}}",
+						"questions",
+						"{{assessmentQuestionId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Marks updated\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "08 - Reorder Assessment Questions",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"assessmentQuestionIds\": [\n    \"{{secondAssessmentQuestionId}}\",\n    \"{{assessmentQuestionId}}\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "questions", "order"]
+				}
+			}
+		},
+		{
+			"name": "09 - Get Assessment With Questions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Assessment contains questions\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.assessmentQuestions).to.be.an(\"array\");",
+							"  pm.expect(json.data.totalMarks).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "10 - Update Draft Assessment",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65,\n  \"skills\": [\n    \"Node.js\",\n    \"TypeScript\",\n    \"PostgreSQL\",\n    \"REST API\"\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Draft updated\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.status).to.eql(\"DRAFT\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "11 - Publish Assessment And Consume Credit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/publish",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "publish"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Assessment published\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.assessment.status).to.eql(\"PUBLISHED\");",
+							"  pm.expect(json.data.assessment.creditGrantId).to.be.a(\"string\");",
+							"  pm.expect(json.data.assessment.creditConsumedAt).to.exist;",
+							"  pm.expect(json.data.assessment.publishedAt).to.exist;",
+							"});",
+							"",
+							"pm.test(\"Credit information returned\", function () {",
+							"  pm.expect(json.data.credit.grantId).to.be.a(\"string\");",
+							"  pm.expect(json.data.credit.remainingCredits).to.be.a(\"number\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "12 - Publish Again Should Fail",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/publish",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "publish"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Second publish is rejected\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Error response returned\", function () {",
+							"  pm.expect(json.success).to.eql(false);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "13 - Update Published Assessment Should Fail",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"This update should fail\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Published assessment cannot be edited\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "14 - Remove Question After Publish Should Fail",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}",
+					"host": ["{{baseUrl}}"],
+					"path": [
+						"assessments",
+						"{{assessmentId}}",
+						"questions",
+						"{{assessmentQuestionId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Published assessment question cannot be removed\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "15 - Get Published Assessment",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Assessment is published\", function () {",
+							"  pm.expect(json.data.status).to.eql(\"PUBLISHED\");",
+							"  pm.expect(json.data.creditConsumedAt).to.exist;",
+							"  pm.expect(json.data.publishedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "16 - Close Assessment",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/assessments/{{assessmentId}}/close",
+					"host": ["{{baseUrl}}"],
+					"path": ["assessments", "{{assessmentId}}", "close"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Assessment closed\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.status).to.eql(\"CLOSED\");",
+							"  pm.expect(json.data.closedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Negative Tests",
+			"item": [
+				{
+					"name": "Create - Invalid Duration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Invalid Assessment\",\n  \"jobRole\": \"Backend Developer\",\n  \"difficulty\": \"BEGINNER\",\n  \"durationMinutes\": 0,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/assessments",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments"]
+						}
+					}
+				},
+				{
+					"name": "Create - Invalid Pass Percentage",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Invalid Assessment\",\n  \"jobRole\": \"Backend Developer\",\n  \"difficulty\": \"BEGINNER\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 101,\n  \"suspiciousThreshold\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/assessments",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments"]
+						}
+					}
+				},
+				{
+					"name": "Create - Invalid Schedule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Invalid Schedule Assessment\",\n  \"jobRole\": \"Backend Developer\",\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3,\n  \"opensAt\": \"2026-09-15T10:00:00.000Z\",\n  \"closesAt\": \"2026-09-14T10:00:00.000Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/assessments",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments"]
+						}
+					}
+				},
+				{
+					"name": "Attach Same Question Again",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments", "{{assessmentId}}", "questions"]
+						}
+					}
+				},
+				{
+					"name": "Attach Question With Zero Marks",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/assessments/{{assessmentId}}/questions",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments", "{{assessmentId}}", "questions"]
+						}
+					}
+				},
+				{
+					"name": "Invalid Assessment ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/assessments/not-a-valid-uuid",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments", "not-a-valid-uuid"]
+						}
+					}
+				},
+				{
+					"name": "Invalid Sort Field",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/assessments?sortBy=password",
+							"host": ["{{baseUrl}}"],
+							"path": ["assessments"],
+							"query": [
+								{
+									"key": "sortBy",
+									"value": "password"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

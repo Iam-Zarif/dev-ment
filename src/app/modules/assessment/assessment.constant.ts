@@ -1,0 +1,20 @@
+export const ASSESSMENT_SORT_FIELDS = [
+	"createdAt",
+	"updatedAt",
+	"title",
+	"applicationDeadline",
+	"opensAt",
+] as const;
+
+export const ASSESSMENT_LIMITS = {
+	TITLE_MAX_LENGTH: 220,
+	JOB_ROLE_MAX_LENGTH: 180,
+	HTML_MAX_LENGTH: 100000,
+	SKILL_MAX_LENGTH: 80,
+	MAX_SKILLS: 30,
+	MAX_DURATION_MINUTES: 1440,
+	MAX_SUSPICIOUS_THRESHOLD: 100,
+	MAX_MARKS: 10000,
+	MAX_QUESTIONS: 200,
+	SEARCH_MAX_LENGTH: 200,
+} as const;
