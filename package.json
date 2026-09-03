@@ -9,7 +9,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
@@ -58,7 +58,7 @@
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.1",
     "@vitest/coverage-v8": "^4.1.11",
-    "prisma": "^8.0.0-rc.12",
+    "prisma": "^7.10.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.13",
     "typescript": "^5.9.3",

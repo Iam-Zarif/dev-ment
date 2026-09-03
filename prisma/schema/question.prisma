@@ -1,0 +1,80 @@
+model Question {
+  id                   String            @id @default(uuid()) @db.Uuid
+  companyId            String            @map("company_id") @db.Uuid
+  createdByRecruiterId String            @map("created_by_recruiter_id") @db.Uuid
+  type                 QuestionType
+  contentHtml          String            @map("content_html")
+  difficulty           DifficultyLevel   @default(INTERMEDIATE)
+  defaultMarks         Decimal           @map("default_marks") @db.Decimal(7, 2)
+  evaluationRubric     String?           @map("evaluation_rubric")
+  selectionMode        McqSelectionMode? @map("selection_mode")
+  allowedLanguages     String[]          @default([]) @map("allowed_languages")
+  starterCode          Json?             @map("starter_code")
+  timeLimitMs          Int?              @map("time_limit_ms")
+  memoryLimitKb        Int?              @map("memory_limit_kb")
+  deletedAt            DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  createdAt            DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  createdByRecruiter  RecruiterProfile     @relation(fields: [createdByRecruiterId], references: [id], onDelete: Restrict)
+  options             QuestionOption[]
+  codingTestCases     CodingTestCase[]
+  assessmentQuestions AssessmentQuestion[]
+
+  @@index([companyId, type], map: "idx_questions_company_type")
+  @@index([createdByRecruiterId], map: "idx_questions_creator")
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid()) @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  optionHtml String   @map("option_html")
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  sortOrder  Int      @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  question        Question               @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedAnswers AnswerSelectedOption[]
+
+  @@unique([questionId, sortOrder])
+  @@index([questionId], map: "idx_question_options_question")
+  @@map("question_options")
+}
+
+model CodingTestCase {
+  id             String   @id @default(uuid()) @db.Uuid
+  questionId     String   @map("question_id") @db.Uuid
+  inputText      String?  @map("input_text")
+  expectedOutput String   @map("expected_output")
+  isHidden       Boolean  @default(true) @map("is_hidden")
+  weight         Decimal  @default(1.00) @db.Decimal(7, 2)
+  sortOrder      Int      @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, sortOrder])
+  @@index([questionId], map: "idx_coding_test_cases_question")
+  @@map("coding_test_cases")
+}
+
+model AssessmentQuestion {
+  id           String   @id @default(uuid()) @db.Uuid
+  assessmentId String   @map("assessment_id") @db.Uuid
+  questionId   String   @map("question_id") @db.Uuid
+  sortOrder    Int      @map("sort_order")
+  marks        Decimal  @db.Decimal(7, 2)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  answers    Answer[]
+
+  @@unique([assessmentId, questionId])
+  @@unique([assessmentId, sortOrder])
+  @@index([assessmentId], map: "idx_assessment_questions_assessment")
+  @@index([questionId], map: "idx_assessment_questions_question")
+  @@map("assessment_questions")
+}

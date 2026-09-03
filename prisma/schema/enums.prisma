@@ -1,0 +1,108 @@
+enum UserRole {
+  ADMIN
+  RECRUITER
+  CANDIDATE
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum QuestionType {
+  MCQ
+  SHORT_TEXT
+  LONG_TEXT
+  CODING
+}
+
+enum McqSelectionMode {
+  SINGLE
+  MULTIPLE
+}
+
+enum ApplicationStatus {
+  APPLIED
+  SHORTLISTED
+  REJECTED
+  INVITED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+  EXPIRED
+}
+
+enum EvaluationStatus {
+  PENDING
+  PARTIAL
+  EVALUATED
+  FINALIZED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum CreditSource {
+  FREE
+  PURCHASE
+  ADMIN
+}
+
+enum StripeWebhookStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+enum ProctorEventType {
+  TAB_HIDDEN
+  WINDOW_BLUR
+  FULLSCREEN_EXIT
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum ExecutionStatus {
+  PENDING
+  PROCESSING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+  FAILED
+}

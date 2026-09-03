@@ -1,0 +1,70 @@
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  legalName       String     @map("legal_name") @db.VarChar(150)
+  email           String     @unique @db.VarChar(320)
+  passwordHash    String?    @map("password_hash") @db.VarChar(255)
+  googleSub       String?    @unique @map("google_sub") @db.VarChar(255)
+  emailVerifiedAt DateTime?  @map("email_verified_at") @db.Timestamptz(6)
+  role            UserRole
+  status          UserStatus @default(ACTIVE)
+  imageUrl        String?    @map("image_url")
+  lastLoginAt     DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  candidateProfile CandidateProfile?
+  recruiterProfile RecruiterProfile?
+  notificationLogs NotificationLog[]
+  auditLogs        AuditLog[]
+
+  @@index([role, status], map: "idx_users_role_status")
+  @@index([createdAt], map: "idx_users_created_at")
+  @@map("users")
+}
+
+model CandidateProfile {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @map("user_id") @db.Uuid
+  phone           String?  @db.VarChar(30)
+  headline        String?  @db.VarChar(180)
+  bio             String?
+  experienceYears Decimal? @map("experience_years") @db.Decimal(4, 1)
+  skills          String[] @default([])
+  githubUrl       String?  @map("github_url")
+  linkedinUrl     String?  @map("linkedin_url")
+  portfolioUrl    String?  @map("portfolio_url")
+  resumeUrl       String?  @map("resume_url")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications Application[]
+
+  @@index([skills], type: Gin, map: "idx_candidate_profiles_skills")
+  @@map("candidate_profiles")
+}
+
+model RecruiterProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  jobTitle  String?  @map("job_title") @db.VarChar(150)
+  phone     String?  @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company              Company       @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  assessments          Assessment[]
+  questionsCreated     Question[]
+  payments             Payment[]
+  creditGrants         CreditGrant[]
+  reviewedApplications Application[]
+  invitationsSent      Invitation[]
+  finalizedAttempts    Attempt[]
+  evaluatedAnswers     Answer[]
+
+  @@index([companyId], map: "idx_recruiter_profiles_company")
+  @@map("recruiter_profiles")
+}

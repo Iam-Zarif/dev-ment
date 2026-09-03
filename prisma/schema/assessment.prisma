@@ -1,0 +1,37 @@
+model Assessment {
+  id                  String           @id @default(uuid()) @db.Uuid
+  recruiterId         String           @map("recruiter_id") @db.Uuid
+  companyId           String           @map("company_id") @db.Uuid
+  creditGrantId       String?          @map("credit_grant_id") @db.Uuid
+  title               String           @db.VarChar(220)
+  jobRole             String           @map("job_role") @db.VarChar(180)
+  descriptionHtml     String?          @map("description_html")
+  instructionsHtml    String?          @map("instructions_html")
+  skills              String[]         @default([])
+  difficulty          DifficultyLevel  @default(INTERMEDIATE)
+  status              AssessmentStatus @default(DRAFT)
+  applicationDeadline DateTime?        @map("application_deadline") @db.Timestamptz(6)
+  opensAt             DateTime?        @map("opens_at") @db.Timestamptz(6)
+  closesAt            DateTime?        @map("closes_at") @db.Timestamptz(6)
+  durationMinutes     Int              @map("duration_minutes")
+  passPercentage      Decimal          @default(50.00) @map("pass_percentage") @db.Decimal(5, 2)
+  suspiciousThreshold Int              @default(3) @map("suspicious_threshold")
+  creditConsumedAt    DateTime?        @map("credit_consumed_at") @db.Timestamptz(6)
+  publishedAt         DateTime?        @map("published_at") @db.Timestamptz(6)
+  closedAt            DateTime?        @map("closed_at") @db.Timestamptz(6)
+  deletedAt           DateTime?        @map("deleted_at") @db.Timestamptz(6)
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  recruiter           RecruiterProfile     @relation(fields: [recruiterId], references: [id], onDelete: Restrict)
+  company             Company              @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  creditGrant         CreditGrant?         @relation(fields: [creditGrantId], references: [id], onDelete: Restrict)
+  assessmentQuestions AssessmentQuestion[]
+  applications        Application[]
+
+  @@index([recruiterId, status, createdAt], map: "idx_assessments_recruiter_status_created")
+  @@index([companyId, status, createdAt], map: "idx_assessments_company_status_created")
+  @@index([status, applicationDeadline], map: "idx_assessments_status_deadline")
+  @@index([skills], type: Gin, map: "idx_assessments_skills")
+  @@map("assessments")
+}

@@ -1,0 +1,42 @@
+model Application {
+  id                    String            @id @default(uuid()) @db.Uuid
+  assessmentId          String            @map("assessment_id") @db.Uuid
+  candidateId           String            @map("candidate_id") @db.Uuid
+  status                ApplicationStatus @default(APPLIED)
+  coverNote             String?           @map("cover_note")
+  reviewedByRecruiterId String?           @map("reviewed_by_recruiter_id") @db.Uuid
+  reviewedAt            DateTime?         @map("reviewed_at") @db.Timestamptz(6)
+  rejectionReason       String?           @map("rejection_reason")
+  appliedAt             DateTime          @default(now()) @map("applied_at") @db.Timestamptz(6)
+  updatedAt             DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  assessment          Assessment        @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  candidate           CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+  reviewedByRecruiter RecruiterProfile? @relation(fields: [reviewedByRecruiterId], references: [id], onDelete: SetNull)
+  invitation          Invitation?
+
+  @@unique([assessmentId, candidateId])
+  @@index([assessmentId, status], map: "idx_applications_assessment_status")
+  @@index([candidateId, status], map: "idx_applications_candidate_status")
+  @@map("applications")
+}
+
+model Invitation {
+  id                   String           @id @default(uuid()) @db.Uuid
+  applicationId        String           @unique @map("application_id") @db.Uuid
+  invitedByRecruiterId String           @map("invited_by_recruiter_id") @db.Uuid
+  tokenHash            String           @unique @map("token_hash") @db.Char(64)
+  status               InvitationStatus @default(PENDING)
+  expiresAt            DateTime         @map("expires_at") @db.Timestamptz(6)
+  sentAt               DateTime         @default(now()) @map("sent_at") @db.Timestamptz(6)
+  acceptedAt           DateTime?        @map("accepted_at") @db.Timestamptz(6)
+  revokedAt            DateTime?        @map("revoked_at") @db.Timestamptz(6)
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  application        Application      @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  invitedByRecruiter RecruiterProfile @relation(fields: [invitedByRecruiterId], references: [id], onDelete: Restrict)
+  attempt            Attempt?
+
+  @@index([status, expiresAt], map: "idx_invitations_status_expiry")
+  @@map("invitations")
+}

@@ -1,0 +1,83 @@
+model PricingPlan {
+  id                String   @id @default(uuid()) @db.Uuid
+  code              String   @unique @db.VarChar(30)
+  name              String   @db.VarChar(80)
+  price             Decimal  @db.Decimal(10, 2)
+  currency          String   @default("USD") @db.Char(3)
+  assessmentCredits Int      @map("assessment_credits")
+  validityDays      Int      @map("validity_days")
+  isActive          Boolean  @default(true) @map("is_active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  payments     Payment[]
+  creditGrants CreditGrant[]
+
+  @@map("pricing_plans")
+}
+
+model Payment {
+  id                      String        @id @default(uuid()) @db.Uuid
+  recruiterId             String        @map("recruiter_id") @db.Uuid
+  planId                  String        @map("plan_id") @db.Uuid
+  amount                  Decimal       @db.Decimal(10, 2)
+  currency                String        @default("USD") @db.Char(3)
+  status                  PaymentStatus @default(PENDING)
+  stripeCheckoutSessionId String?       @unique @map("stripe_checkout_session_id") @db.VarChar(255)
+  stripePaymentIntentId   String?       @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  stripeCustomerId        String?       @map("stripe_customer_id") @db.VarChar(255)
+  idempotencyKey          String        @unique @default(uuid()) @map("idempotency_key") @db.Uuid
+  paidAt                  DateTime?     @map("paid_at") @db.Timestamptz(6)
+  failedAt                DateTime?     @map("failed_at") @db.Timestamptz(6)
+  cancelledAt             DateTime?     @map("cancelled_at") @db.Timestamptz(6)
+  refundedAt              DateTime?     @map("refunded_at") @db.Timestamptz(6)
+  metadata                Json?
+  createdAt               DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  recruiter     RecruiterProfile     @relation(fields: [recruiterId], references: [id], onDelete: Restrict)
+  plan          PricingPlan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  webhookEvents StripeWebhookEvent[]
+  creditGrant   CreditGrant?
+
+  @@index([recruiterId, status, createdAt], map: "idx_payments_recruiter_status_created")
+  @@map("payments")
+}
+
+model StripeWebhookEvent {
+  id            String              @id @default(uuid()) @db.Uuid
+  stripeEventId String              @unique @map("stripe_event_id") @db.VarChar(255)
+  paymentId     String?             @map("payment_id") @db.Uuid
+  eventType     String              @map("event_type") @db.VarChar(120)
+  objectId      String?             @map("object_id") @db.VarChar(255)
+  status        StripeWebhookStatus @default(RECEIVED)
+  errorMessage  String?             @map("error_message")
+  processedAt   DateTime?           @map("processed_at") @db.Timestamptz(6)
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId], map: "idx_stripe_webhook_events_payment")
+  @@index([status], map: "idx_stripe_webhook_events_status")
+  @@map("stripe_webhook_events")
+}
+
+model CreditGrant {
+  id               String       @id @default(uuid()) @db.Uuid
+  recruiterId      String       @map("recruiter_id") @db.Uuid
+  planId           String?      @map("plan_id") @db.Uuid
+  paymentId        String?      @unique @map("payment_id") @db.Uuid
+  source           CreditSource
+  totalCredits     Int          @map("total_credits")
+  remainingCredits Int          @map("remaining_credits")
+  expiresAt        DateTime?    @map("expires_at") @db.Timestamptz(6)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recruiter   RecruiterProfile @relation(fields: [recruiterId], references: [id], onDelete: Restrict)
+  plan        PricingPlan?     @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payment     Payment?         @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  assessments Assessment[]
+
+  @@index([recruiterId, expiresAt], map: "idx_credit_grants_recruiter_expiry")
+  @@map("credit_grants")
+}

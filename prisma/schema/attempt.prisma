@@ -1,0 +1,94 @@
+model Attempt {
+  id                     String           @id @default(uuid()) @db.Uuid
+  invitationId           String           @unique @map("invitation_id") @db.Uuid
+  status                 AttemptStatus    @default(IN_PROGRESS)
+  startedAt              DateTime         @default(now()) @map("started_at") @db.Timestamptz(6)
+  expiresAt              DateTime         @map("expires_at") @db.Timestamptz(6)
+  submittedAt            DateTime?        @map("submitted_at") @db.Timestamptz(6)
+  isSuspicious           Boolean          @default(false) @map("is_suspicious")
+  tabSwitchCount         Int              @default(0) @map("tab_switch_count")
+  evaluationStatus       EvaluationStatus @default(PENDING) @map("evaluation_status")
+  totalScore             Decimal?         @map("total_score") @db.Decimal(10, 2)
+  percentage             Decimal?         @db.Decimal(5, 2)
+  passed                 Boolean?
+  finalFeedback          String?          @map("final_feedback")
+  finalizedByRecruiterId String?          @map("finalized_by_recruiter_id") @db.Uuid
+  finalizedAt            DateTime?        @map("finalized_at") @db.Timestamptz(6)
+  resultReleasedAt       DateTime?        @map("result_released_at") @db.Timestamptz(6)
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  invitation           Invitation        @relation(fields: [invitationId], references: [id], onDelete: Restrict)
+  finalizedByRecruiter RecruiterProfile? @relation(fields: [finalizedByRecruiterId], references: [id], onDelete: SetNull)
+  answers              Answer[]
+  proctorEvents        ProctorEvent[]
+
+  @@index([status, expiresAt], map: "idx_attempts_status_expiry")
+  @@map("attempts")
+}
+
+model Answer {
+  id                     String           @id @default(uuid()) @db.Uuid
+  attemptId              String           @map("attempt_id") @db.Uuid
+  assessmentQuestionId   String           @map("assessment_question_id") @db.Uuid
+  answerText             String?          @map("answer_text")
+  codeAnswer             String?          @map("code_answer")
+  language               String?          @db.VarChar(60)
+  executionStatus        ExecutionStatus? @map("execution_status")
+  judgeToken             String?          @map("judge_token") @db.VarChar(255)
+  passedTestCases        Int?             @map("passed_test_cases")
+  totalTestCases         Int?             @map("total_test_cases")
+  executionTimeMs        Int?             @map("execution_time_ms")
+  executionMemoryKb      Int?             @map("execution_memory_kb")
+  executionResult        Json?            @map("execution_result")
+  autoScore              Decimal?         @map("auto_score") @db.Decimal(7, 2)
+  aiSuggestedScore       Decimal?         @map("ai_suggested_score") @db.Decimal(7, 2)
+  manualScore            Decimal?         @map("manual_score") @db.Decimal(7, 2)
+  finalScore             Decimal?         @map("final_score") @db.Decimal(7, 2)
+  aiFeedback             Json?            @map("ai_feedback")
+  aiModel                String?          @map("ai_model") @db.VarChar(120)
+  recruiterFeedback      String?          @map("recruiter_feedback")
+  evaluatedByRecruiterId String?          @map("evaluated_by_recruiter_id") @db.Uuid
+  evaluatedAt            DateTime?        @map("evaluated_at") @db.Timestamptz(6)
+  lastSavedAt            DateTime?        @map("last_saved_at") @db.Timestamptz(6)
+  createdAt              DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  attempt              Attempt                @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  assessmentQuestion   AssessmentQuestion     @relation(fields: [assessmentQuestionId], references: [id], onDelete: Restrict)
+  evaluatedByRecruiter RecruiterProfile?      @relation(fields: [evaluatedByRecruiterId], references: [id], onDelete: SetNull)
+  selectedOptions      AnswerSelectedOption[]
+
+  @@unique([attemptId, assessmentQuestionId])
+  @@index([attemptId], map: "idx_answers_attempt")
+  @@index([evaluatedByRecruiterId], map: "idx_answers_evaluator")
+  @@map("answers")
+}
+
+model AnswerSelectedOption {
+  answerId  String   @map("answer_id") @db.Uuid
+  optionId  String   @map("option_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  answer Answer         @relation(fields: [answerId], references: [id], onDelete: Cascade)
+  option QuestionOption @relation(fields: [optionId], references: [id], onDelete: Restrict)
+
+  @@id([answerId, optionId])
+  @@map("answer_selected_options")
+}
+
+model ProctorEvent {
+  id            String           @id @default(uuid()) @db.Uuid
+  attemptId     String           @map("attempt_id") @db.Uuid
+  clientEventId String           @map("client_event_id") @db.Uuid
+  eventType     ProctorEventType @map("event_type")
+  occurredAt    DateTime         @map("occurred_at") @db.Timestamptz(6)
+  metadata      Json?
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, clientEventId])
+  @@index([attemptId, occurredAt], map: "idx_proctor_events_attempt_time")
+  @@map("proctor_events")
+}

@@ -1,0 +1,18 @@
+model Company {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String    @db.VarChar(180)
+  domain     String    @unique @db.VarChar(255)
+  websiteUrl String?   @map("website_url")
+  logoUrl    String?   @map("logo_url")
+  isVerified Boolean   @default(false) @map("is_verified")
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  recruiters  RecruiterProfile[]
+  assessments Assessment[]
+  questions   Question[]
+
+  @@index([name], map: "idx_companies_name")
+  @@map("companies")
+}
