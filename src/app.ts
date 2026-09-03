@@ -6,8 +6,11 @@ import hpp from "hpp";
 import apiRouter from "./app/routes/index.js";
 import { config } from "./config/index.js";
 import { prisma } from "./lib/prisma/index.js";
-import { redisClient } from "./lib/redis/index.js";
-import { globalErrorHandler } from "./shared/middlewares/globalErrorHandler.js";
+import { connectRedis, redisClient } from "./lib/redis/index.js";
+import {
+	globalErrorHandler,
+	globalRateLimiter,
+} from "./shared/middlewares/index.js";
 
 const app = express();
 
@@ -15,18 +18,26 @@ app.disable("x-powered-by");
 
 app.use(
 	cors({
-		origin: config.cors.allowedOrigins.length
-			? config.cors.allowedOrigins
-			: true,
+		origin:
+			config.cors.allowedOrigins.length > 0 ? config.cors.allowedOrigins : true,
 		credentials: true,
 	}),
 );
 
 app.use(hpp());
 app.use(compression());
-app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+app.use(
+	express.json({
+		limit: "1mb",
+	}),
+);
+app.use(
+	express.urlencoded({
+		extended: true,
+		limit: "1mb",
+	}),
+);
 
 app.get("/", (_req: Request, res: Response) => {
 	res.status(200).json({
@@ -39,7 +50,7 @@ app.get("/", (_req: Request, res: Response) => {
 		},
 	});
 });
-app.use(`/api/${config.app.apiVersion}`, apiRouter);
+
 app.get("/health", async (_req: Request, res: Response) => {
 	const checks = {
 		application: "healthy",
@@ -55,7 +66,12 @@ app.get("/health", async (_req: Request, res: Response) => {
 	}
 
 	try {
+		if (!redisClient.isOpen) {
+			await connectRedis();
+		}
+
 		const pong = await redisClient.ping();
+
 		checks.redis = pong === "PONG" ? "healthy" : "unhealthy";
 	} catch {
 		checks.redis = "unhealthy";
@@ -71,6 +87,8 @@ app.get("/health", async (_req: Request, res: Response) => {
 		data: checks,
 	});
 });
+
+app.use(`/api/${config.app.apiVersion}`, globalRateLimiter, apiRouter);
 
 app.use((_req: Request, res: Response) => {
 	res.status(404).json({

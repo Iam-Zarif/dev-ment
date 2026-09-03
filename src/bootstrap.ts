@@ -9,54 +9,54 @@ import { logger } from "./shared/utils/index.js";
 let server: Server | null = null;
 
 const shutdown = async (signal: string) => {
-  logger.info({ signal }, "Shutdown initiated");
+	logger.info({ signal }, "Shutdown initiated");
 
-  if (server) {
-    await new Promise<void>((resolve, reject) => {
-      server?.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+	if (server) {
+		await new Promise<void>((resolve, reject) => {
+			server?.close((error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
 
-        resolve();
-      });
-    });
-  }
+				resolve();
+			});
+		});
+	}
 
-  await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
+	await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
 
-  process.exit(0);
+	process.exit(0);
 };
 
 export const bootstrap = async () => {
-  try {
-    await connectDatabase();
-    await ensureSeedData();
-    await connectRedis();
+	try {
+		await connectDatabase();
+		await ensureSeedData();
+		await connectRedis();
 
-    server = app.listen(config.app.port, () => {
-      logger.info(
-        {
-          port: config.app.port,
-          apiBaseUrl: config.app.apiBaseUrl,
-        },
-        `${config.app.name} server running`,
-      );
-    });
+		server = app.listen(config.app.port, () => {
+			logger.info(
+				{
+					port: config.app.port,
+					apiBaseUrl: config.app.apiBaseUrl,
+				},
+				`${config.app.name} server running`,
+			);
+		});
 
-    process.once("SIGINT", () => {
-      void shutdown("SIGINT");
-    });
+		process.once("SIGINT", () => {
+			void shutdown("SIGINT");
+		});
 
-    process.once("SIGTERM", () => {
-      void shutdown("SIGTERM");
-    });
-  } catch (error) {
-    logger.fatal({ err: error }, "Application startup failed");
+		process.once("SIGTERM", () => {
+			void shutdown("SIGTERM");
+		});
+	} catch (error) {
+		logger.fatal({ err: error }, "Application startup failed");
 
-    await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
+		await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
 
-    process.exit(1);
-  }
+		process.exit(1);
+	}
 };

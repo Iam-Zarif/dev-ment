@@ -1,0 +1,559 @@
+{
+  "info": {
+    "_postman_id": "4f4b8c36-7fa2-4d7e-b6c2-devment-question",
+    "name": "Dev-ment - Question APIs",
+    "description": "Recruiter company scoped Question Bank APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "questionId",
+      "value": ""
+    },
+    {
+      "key": "duplicateQuestionId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Create MCQ Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Which one is a JavaScript library?</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\",\n  \"options\": [\n    {\n      \"optionHtml\": \"React\",\n      \"isCorrect\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"optionHtml\": \"PostgreSQL\",\n      \"isCorrect\": false,\n      \"sortOrder\": 2\n    },\n    {\n      \"optionHtml\": \"Redis\",\n      \"isCorrect\": false,\n      \"sortOrder\": 3\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201\", function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Question created successfully\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.id).to.be.a(\"string\");",
+              "});",
+              "",
+              "if (json.success && json.data?.id) {",
+              "  pm.collectionVariables.set(\"questionId\", json.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Create Short Text Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"SHORT_TEXT\",\n  \"contentHtml\": \"<p>What is REST API?</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"evaluationRubric\": \"Explain the core REST principles clearly.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "03 - Create Long Text Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"LONG_TEXT\",\n  \"contentHtml\": \"<p>Explain how authentication and authorization differ in a backend application.</p>\",\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10,\n  \"evaluationRubric\": \"Candidate should explain identity verification, permissions, roles and practical examples.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "04 - Create Coding Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"CODING\",\n  \"contentHtml\": \"<p>Write a function that reverses a string.</p>\",\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 15,\n  \"evaluationRubric\": \"Correct output, edge cases and clean implementation.\",\n  \"allowedLanguages\": [\n    \"javascript\",\n    \"typescript\"\n  ],\n  \"starterCode\": {\n    \"javascript\": \"function reverseString(value) {}\",\n    \"typescript\": \"function reverseString(value: string): string {}\"\n  },\n  \"timeLimitMs\": 2000,\n  \"memoryLimitKb\": 131072,\n  \"testCases\": [\n    {\n      \"inputText\": \"hello\",\n      \"expectedOutput\": \"olleh\",\n      \"isHidden\": false,\n      \"weight\": 1,\n      \"sortOrder\": 1\n    },\n    {\n      \"inputText\": \"devment\",\n      \"expectedOutput\": \"tnemved\",\n      \"isHidden\": true,\n      \"weight\": 2,\n      \"sortOrder\": 2\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ]
+        }
+      }
+    },
+    {
+      "name": "05 - Get All Questions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Paginated response exists\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.items).to.be.an(\"array\");",
+              "  pm.expect(json.data.meta).to.be.an(\"object\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Filter MCQ Questions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions?page=1&limit=10&type=MCQ&difficulty=BEGINNER&sortBy=createdAt&sortOrder=desc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "type",
+              "value": "MCQ"
+            },
+            {
+              "key": "difficulty",
+              "value": "BEGINNER"
+            },
+            {
+              "key": "sortBy",
+              "value": "createdAt"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "07 - Search Questions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions?search=JavaScript&page=1&limit=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "JavaScript"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "08 - Get Question By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions",
+            "{{questionId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Correct question returned\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.id).to.eql(pm.collectionVariables.get(\"questionId\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Update Question",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10,\n  \"contentHtml\": \"<p>Which one is primarily used to build user interfaces in JavaScript?</p>\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions",
+            "{{questionId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Question updated\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.defaultMarks).to.exist;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Duplicate Question",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{questionId}}/duplicate",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions",
+            "{{questionId}}",
+            "duplicate"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201\", function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"New question ID created\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.id).to.be.a(\"string\");",
+              "  pm.expect(json.data.id).to.not.eql(pm.collectionVariables.get(\"questionId\"));",
+              "});",
+              "",
+              "if (json.success && json.data?.id) {",
+              "  pm.collectionVariables.set(\"duplicateQuestionId\", json.data.id);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Delete Duplicated Question",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{duplicateQuestionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions",
+            "{{duplicateQuestionId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test(\"Question soft deleted\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.deletedAt).to.exist;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Get Deleted Question",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/questions/{{duplicateQuestionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "questions",
+            "{{duplicateQuestionId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Deleted question is not accessible\", function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "MCQ - No Options",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Invalid MCQ</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "MCQ - Two Correct For SINGLE",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Invalid single choice question</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\",\n  \"options\": [\n    {\n      \"optionHtml\": \"A\",\n      \"isCorrect\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"optionHtml\": \"B\",\n      \"isCorrect\": true,\n      \"sortOrder\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Coding - No Test Cases",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CODING\",\n  \"contentHtml\": \"<p>Invalid coding question</p>\",\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10,\n  \"allowedLanguages\": [\n    \"javascript\"\n  ],\n  \"timeLimitMs\": 2000,\n  \"memoryLimitKb\": 131072\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invalid Sort Field",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions?sortBy=password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "password"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

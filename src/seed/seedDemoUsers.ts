@@ -1,16 +1,11 @@
 import { config } from "../config/index.js";
-import {
-	CreditSource,
-	UserRole,
-} from "../generated/prisma/enums.js";
+import { CreditSource, UserRole } from "../generated/prisma/enums.js";
 import { prisma } from "../lib/prisma/index.js";
 import { AppError } from "../shared/errors/index.js";
 import { hashPassword } from "../shared/utils/index.js";
 
 const seedCandidate = async () => {
-	const email = config.seed.candidate.email
-		.trim()
-		.toLowerCase();
+	const email = config.seed.candidate.email.trim().toLowerCase();
 
 	const existingUser = await prisma.user.findUnique({
 		where: {
@@ -47,9 +42,7 @@ const seedCandidate = async () => {
 		return;
 	}
 
-	const passwordHash = await hashPassword(
-		config.seed.candidate.password,
-	);
+	const passwordHash = await hashPassword(config.seed.candidate.password);
 
 	await prisma.user.create({
 		data: {
@@ -71,14 +64,11 @@ const seedCandidate = async () => {
 };
 
 const seedRecruiter = async () => {
-	const email = config.seed.recruiter.email
+	const email = config.seed.recruiter.email.trim().toLowerCase();
+
+	const companyDomain = config.seed.recruiter.company.domain
 		.trim()
 		.toLowerCase();
-
-	const companyDomain =
-		config.seed.recruiter.company.domain
-			.trim()
-			.toLowerCase();
 
 	const company = await prisma.company.upsert({
 		where: {
@@ -86,16 +76,14 @@ const seedRecruiter = async () => {
 		},
 		update: {
 			name: config.seed.recruiter.company.name,
-			websiteUrl:
-				config.seed.recruiter.company.website,
+			websiteUrl: config.seed.recruiter.company.website,
 			isVerified: true,
 			deletedAt: null,
 		},
 		create: {
 			name: config.seed.recruiter.company.name,
 			domain: companyDomain,
-			websiteUrl:
-				config.seed.recruiter.company.website,
+			websiteUrl: config.seed.recruiter.company.website,
 			isVerified: true,
 		},
 	});
@@ -120,35 +108,28 @@ const seedRecruiter = async () => {
 			);
 		}
 
-		const recruiterProfile =
-			await prisma.recruiterProfile.upsert({
-				where: {
-					userId: existingUser.id,
-				},
-				update: {
-					companyId: company.id,
-					jobTitle:
-						config.seed.recruiter.jobTitle,
-				},
-				create: {
-					userId: existingUser.id,
-					companyId: company.id,
-					jobTitle:
-						config.seed.recruiter.jobTitle,
-				},
-			});
+		const recruiterProfile = await prisma.recruiterProfile.upsert({
+			where: {
+				userId: existingUser.id,
+			},
+			update: {
+				companyId: company.id,
+				jobTitle: config.seed.recruiter.jobTitle,
+			},
+			create: {
+				userId: existingUser.id,
+				companyId: company.id,
+				jobTitle: config.seed.recruiter.jobTitle,
+			},
+		});
 
-		recruiterProfileId =
-			recruiterProfile.id;
+		recruiterProfileId = recruiterProfile.id;
 	} else {
-		const passwordHash = await hashPassword(
-			config.seed.recruiter.password,
-		);
+		const passwordHash = await hashPassword(config.seed.recruiter.password);
 
 		const user = await prisma.user.create({
 			data: {
-				legalName:
-					config.seed.recruiter.name,
+				legalName: config.seed.recruiter.name,
 				email,
 				passwordHash,
 				emailVerifiedAt: new Date(),
@@ -156,8 +137,7 @@ const seedRecruiter = async () => {
 				recruiterProfile: {
 					create: {
 						companyId: company.id,
-						jobTitle:
-							config.seed.recruiter.jobTitle,
+						jobTitle: config.seed.recruiter.jobTitle,
 					},
 				},
 			},
@@ -171,46 +151,37 @@ const seedRecruiter = async () => {
 		});
 
 		if (!user.recruiterProfile) {
-			throw new AppError(
-				500,
-				"Demo recruiter profile could not be created",
-			);
+			throw new AppError(500, "Demo recruiter profile could not be created");
 		}
 
-		recruiterProfileId =
-			user.recruiterProfile.id;
+		recruiterProfileId = user.recruiterProfile.id;
 	}
 
-	const existingFreeGrant =
-		await prisma.creditGrant.findFirst({
-			where: {
-				recruiterId: recruiterProfileId,
-				source: CreditSource.FREE,
-			},
-			select: {
-				id: true,
-			},
-		});
+	const existingFreeGrant = await prisma.creditGrant.findFirst({
+		where: {
+			recruiterId: recruiterProfileId,
+			source: CreditSource.FREE,
+		},
+		select: {
+			id: true,
+		},
+	});
 
 	if (existingFreeGrant) {
 		return;
 	}
 
-	const freePlan =
-		await prisma.pricingPlan.findUnique({
-			where: {
-				code: "FREE",
-			},
-			select: {
-				id: true,
-			},
-		});
+	const freePlan = await prisma.pricingPlan.findUnique({
+		where: {
+			code: "FREE",
+		},
+		select: {
+			id: true,
+		},
+	});
 
 	if (!freePlan) {
-		throw new AppError(
-			500,
-			"FREE pricing plan is not available",
-		);
+		throw new AppError(500, "FREE pricing plan is not available");
 	}
 
 	await prisma.creditGrant.create({
@@ -218,10 +189,8 @@ const seedRecruiter = async () => {
 			recruiterId: recruiterProfileId,
 			planId: freePlan.id,
 			source: CreditSource.FREE,
-			totalCredits:
-				config.seed.recruiter.freeCredits,
-			remainingCredits:
-				config.seed.recruiter.freeCredits,
+			totalCredits: config.seed.recruiter.freeCredits,
+			remainingCredits: config.seed.recruiter.freeCredits,
 		},
 	});
 };
