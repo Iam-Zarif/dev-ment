@@ -18,7 +18,8 @@
 		"prisma:migrate": "prisma migrate dev",
 		"prisma:studio": "prisma studio",
 		"test": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"zip": "rm -f dev-ment.zip && zip -rq dev-ment.zip . -x \"dev-ment.zip\" \"node_modules/*\" \".git/*\" \".vercel/*\" \".env*\" \"dist/*\" \"build/*\" \"coverage/*\" \".cache/*\" \"tmp/*\" \"temp/*\" \"logs/*\" \"*.log\" \".DS_Store\" \"*/.DS_Store\" \"src/generated/prisma/*\" \".idea/*\" && if [ -f .env.example ]; then zip -q dev-ment.zip .env.example; fi"
 	},
 	"keywords": [],
 	"author": "",

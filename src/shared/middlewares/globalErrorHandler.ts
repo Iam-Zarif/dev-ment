@@ -2,7 +2,7 @@ import type { ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 import { config } from "../../config/index.js";
 import { AppError, handlePrismaError } from "../errors/index.js";
-import { logger } from "../utils/logger.js";
+import { logger } from "../utils/index.js";
 
 export const globalErrorHandler: ErrorRequestHandler = (
 	error,

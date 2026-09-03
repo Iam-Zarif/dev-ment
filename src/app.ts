@@ -1,10 +1,13 @@
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 import hpp from "hpp";
+import apiRouter from "./app/routes/index.js";
 import { config } from "./config/index.js";
 import { prisma } from "./lib/prisma/index.js";
 import { redisClient } from "./lib/redis/index.js";
+import { globalErrorHandler } from "./shared/middlewares/globalErrorHandler.js";
 
 const app = express();
 
@@ -22,6 +25,7 @@ app.use(
 app.use(hpp());
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.get("/", (_req: Request, res: Response) => {
@@ -35,7 +39,7 @@ app.get("/", (_req: Request, res: Response) => {
 		},
 	});
 });
-
+app.use(`/api/${config.app.apiVersion}`, apiRouter);
 app.get("/health", async (_req: Request, res: Response) => {
 	const checks = {
 		application: "healthy",
@@ -75,5 +79,7 @@ app.use((_req: Request, res: Response) => {
 		errors: [],
 	});
 });
+
+app.use(globalErrorHandler);
 
 export default app;

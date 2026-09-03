@@ -1,3 +1,5 @@
+import type { UserRole } from "../../generated/prisma/enums.js";
+
 export type ApiErrorDetail = {
 	path?: string;
 	message: string;
@@ -18,4 +20,10 @@ export type PaginationOptions = {
 	limit?: number;
 	sortBy?: string;
 	sortOrder?: SortOrder;
+};
+
+export type AuthenticatedUser = {
+	userId: string;
+	email: string;
+	role: UserRole;
 };
