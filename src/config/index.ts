@@ -77,6 +77,13 @@ export const config = Object.freeze({
 	cors: {
 		allowedOrigins: env.ALLOWED_ORIGINS,
 	},
+	invitationEmail: {
+		ratePerSecond: env.INVITATION_EMAIL_RATE_PER_SECOND,
+		concurrency: env.INVITATION_EMAIL_CONCURRENCY,
+		maxAttempts: env.INVITATION_EMAIL_MAX_ATTEMPTS,
+		retryDelayMs: env.INVITATION_EMAIL_RETRY_DELAY_MS,
+		workerEnabled: env.INVITATION_QUEUE_WORKER_ENABLED,
+	},
 
 	rateLimit: {
 		windowMs: env.RATE_LIMIT_WINDOW_MS,

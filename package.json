@@ -29,6 +29,7 @@
 		"@prisma/adapter-pg": "^7.10.0",
 		"@prisma/client": "^7.10.0",
 		"bcryptjs": "^3.0.3",
+		"bullmq": "^6.3.4",
 		"cloudinary": "^2.11.0",
 		"compression": "^1.8.1",
 		"cookie-parser": "^1.4.7",

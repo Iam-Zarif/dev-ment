@@ -113,6 +113,34 @@ const rawEnvSchema = z
 		SEED_RECRUITER_NAME: z.string().trim().default("Demo Recruiter"),
 		SEED_RECRUITER_EMAIL: z.email().default("recruiter@mostofafatin.com"),
 		SEED_RECRUITER_PASSWORD: z.string().min(8),
+		INVITATION_EMAIL_RATE_PER_SECOND: z.coerce
+			.number()
+			.int()
+			.positive()
+			.max(100)
+			.default(20),
+
+		INVITATION_EMAIL_CONCURRENCY: z.coerce
+			.number()
+			.int()
+			.positive()
+			.max(100)
+			.default(20),
+
+		INVITATION_EMAIL_MAX_ATTEMPTS: z.coerce
+			.number()
+			.int()
+			.min(1)
+			.max(10)
+			.default(3),
+
+		INVITATION_EMAIL_RETRY_DELAY_MS: z.coerce
+			.number()
+			.int()
+			.positive()
+			.default(2000),
+
+		INVITATION_QUEUE_WORKER_ENABLED: booleanFromEnv.default(true),
 		SEED_RECRUITER_JOB_TITLE: z.string().trim().default("Technical Recruiter"),
 		SEED_RECRUITER_COMPANY_NAME: z
 			.string()
