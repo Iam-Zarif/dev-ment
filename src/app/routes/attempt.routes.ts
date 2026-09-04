@@ -1,9 +1,6 @@
 import { Router } from "express";
 import { UserRole } from "../../generated/prisma/enums.js";
-import {
-	auth,
-	validateRequest,
-} from "../../shared/middlewares/index.js";
+import { auth, validateRequest } from "../../shared/middlewares/index.js";
 import { idParamSchema } from "../../shared/validation/index.js";
 import { attemptController } from "../modules/attempt/attempt.controller.js";
 import {
@@ -15,9 +12,7 @@ import {
 
 const router = Router();
 
-router.use(
-	auth(UserRole.CANDIDATE),
-);
+router.use(auth(UserRole.CANDIDATE));
 
 router.post(
 	"/start",
@@ -38,8 +33,7 @@ router.get(
 router.put(
 	"/:id/answers/:assessmentQuestionId",
 	validateRequest({
-		params:
-			attemptAnswerParamsSchema,
+		params: attemptAnswerParamsSchema,
 		body: saveAnswerSchema,
 	}),
 	attemptController.saveAnswer,

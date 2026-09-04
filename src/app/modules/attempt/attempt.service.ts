@@ -10,10 +10,7 @@ import {
 } from "../../../generated/prisma/enums.js";
 import { prisma } from "../../../lib/prisma/index.js";
 import { AppError } from "../../../shared/errors/index.js";
-import {
-	AUDIT_ACTIONS,
-	AUDIT_ENTITY_TYPES,
-} from "../audit/audit.constant.js";
+import { AUDIT_ACTIONS, AUDIT_ENTITY_TYPES } from "../audit/audit.constant.js";
 import { auditService } from "../audit/audit.service.js";
 import { getCandidateContext } from "../candidate/candidate.context.js";
 import { ATTEMPT_CONSTANTS } from "./attempt.constant.js";
@@ -150,10 +147,7 @@ const autoSubmitLockedAttempt = async (
 	return attempt;
 };
 
-const loadAttemptSession = async (
-	candidateId: string,
-	attemptId: string,
-) => {
+const loadAttemptSession = async (candidateId: string, attemptId: string) => {
 	const session = await prisma.attempt.findFirst({
 		where: {
 			id: attemptId,
@@ -271,11 +265,7 @@ const settleAttemptIfUnavailable = async (
 	ipAddress?: string,
 ): Promise<void> => {
 	await prisma.$transaction(async (tx) => {
-		const attempt = await lockOwnedAttempt(
-			tx,
-			candidateId,
-			attemptId,
-		);
+		const attempt = await lockOwnedAttempt(tx, candidateId, attemptId);
 
 		if (attempt.status !== AttemptStatus.IN_PROGRESS) {
 			return;
@@ -287,13 +277,7 @@ const settleAttemptIfUnavailable = async (
 			return;
 		}
 
-		await autoSubmitLockedAttempt(
-			tx,
-			attempt.id,
-			now,
-			userId,
-			ipAddress,
-		);
+		await autoSubmitLockedAttempt(tx, attempt.id, now, userId, ipAddress);
 	});
 };
 
@@ -318,14 +302,8 @@ const start = async (
 			);
 		}
 
-		if (
-			lockedInvitation.applicationStatus !==
-			ApplicationStatus.INVITED
-		) {
-			throw new AppError(
-				409,
-				"Application is not currently invited",
-			);
+		if (lockedInvitation.applicationStatus !== ApplicationStatus.INVITED) {
+			throw new AppError(409, "Application is not currently invited");
 		}
 
 		const existingAttempt = await tx.attempt.findUnique({
@@ -339,10 +317,7 @@ const start = async (
 		});
 
 		if (existingAttempt) {
-			throw new AppError(
-				409,
-				"An attempt already exists for this invitation",
-			);
+			throw new AppError(409, "An attempt already exists for this invitation");
 		}
 
 		const assessment = await tx.assessment.findFirst({
@@ -365,102 +340,62 @@ const start = async (
 		});
 
 		if (!assessment) {
-			throw new AppError(
-				404,
-				"Assessment not found",
-			);
+			throw new AppError(404, "Assessment not found");
 		}
 
-		if (
-			assessment.status !==
-			AssessmentStatus.PUBLISHED
-		) {
-			throw new AppError(
-				409,
-				"Assessment is not currently available",
-			);
+		if (assessment.status !== AssessmentStatus.PUBLISHED) {
+			throw new AppError(409, "Assessment is not currently available");
 		}
 
-		if (
-			assessment._count
-				.assessmentQuestions === 0
-		) {
-			throw new AppError(
-				409,
-				"Assessment has no questions",
-			);
+		if (assessment._count.assessmentQuestions === 0) {
+			throw new AppError(409, "Assessment has no questions");
 		}
 
 		const now = new Date();
 
-		if (
-			assessment.opensAt &&
-			assessment.opensAt > now
-		) {
-			throw new AppError(
-				409,
-				"Assessment has not opened yet",
-			);
+		if (assessment.opensAt && assessment.opensAt > now) {
+			throw new AppError(409, "Assessment has not opened yet");
 		}
 
-		if (
-			assessment.closesAt &&
-			assessment.closesAt <= now
-		) {
-			throw new AppError(
-				410,
-				"Assessment has already closed",
-			);
+		if (assessment.closesAt && assessment.closesAt <= now) {
+			throw new AppError(410, "Assessment has already closed");
 		}
 
 		const durationEnd = new Date(
-			now.getTime() +
-				assessment.durationMinutes *
-					60 *
-					1000,
+			now.getTime() + assessment.durationMinutes * 60 * 1000,
 		);
 
 		const expiresAt =
-			assessment.closesAt &&
-			assessment.closesAt < durationEnd
+			assessment.closesAt && assessment.closesAt < durationEnd
 				? assessment.closesAt
 				: durationEnd;
 
-		const created =
-			await tx.attempt.create({
-				data: {
-					invitationId:
-						lockedInvitation.id,
-					status:
-						AttemptStatus.IN_PROGRESS,
-					startedAt: now,
-					expiresAt,
-				},
-				select: {
-					id: true,
-					status: true,
-					startedAt: true,
-					expiresAt: true,
-				},
-			});
+		const created = await tx.attempt.create({
+			data: {
+				invitationId: lockedInvitation.id,
+				status: AttemptStatus.IN_PROGRESS,
+				startedAt: now,
+				expiresAt,
+			},
+			select: {
+				id: true,
+				status: true,
+				startedAt: true,
+				expiresAt: true,
+			},
+		});
 
 		await auditService.create(
 			{
 				actorUserId: userId,
-				action:
-					AUDIT_ACTIONS.ATTEMPT_STARTED,
-				entityType:
-					AUDIT_ENTITY_TYPES.ATTEMPT,
+				action: AUDIT_ACTIONS.ATTEMPT_STARTED,
+				entityType: AUDIT_ENTITY_TYPES.ATTEMPT,
 				entityId: created.id,
 				metadata: {
-					invitationId:
-						lockedInvitation.id,
-					assessmentId:
-						assessment.id,
+					invitationId: lockedInvitation.id,
+					assessmentId: assessment.id,
 				},
-				...(ipAddress
-					? { ipAddress }
-					: {}),
+				...(ipAddress ? { ipAddress } : {}),
 			},
 			tx,
 		);
@@ -468,11 +403,7 @@ const start = async (
 		return created;
 	});
 
-	return getById(
-		userId,
-		attempt.id,
-		ipAddress,
-	);
+	return getById(userId, attempt.id, ipAddress);
 };
 
 const getById = async (
@@ -480,8 +411,7 @@ const getById = async (
 	attemptId: string,
 	ipAddress?: string,
 ) => {
-	const candidate =
-		await getCandidateContext(userId);
+	const candidate = await getCandidateContext(userId);
 
 	await settleAttemptIfUnavailable(
 		userId,
@@ -490,16 +420,9 @@ const getById = async (
 		ipAddress,
 	);
 
-	const session =
-		await loadAttemptSession(
-			candidate.candidateId,
-			attemptId,
-		);
+	const session = await loadAttemptSession(candidate.candidateId, attemptId);
 
-	return presentAttemptSession(
-		session,
-		new Date(),
-	);
+	return presentAttemptSession(session, new Date());
 };
 
 const saveAnswer = async (
@@ -509,299 +432,169 @@ const saveAnswer = async (
 	input: SaveAnswerInput,
 	ipAddress?: string,
 ) => {
-	const result = await prisma.$transaction(
-		async (tx) => {
-			const candidate =
-				await getCandidateContext(
-					userId,
-					tx,
-				);
+	const result = await prisma.$transaction(async (tx) => {
+		const candidate = await getCandidateContext(userId, tx);
 
-			const attempt =
-				await lockOwnedAttempt(
-					tx,
-					candidate.candidateId,
-					attemptId,
-				);
+		const attempt = await lockOwnedAttempt(
+			tx,
+			candidate.candidateId,
+			attemptId,
+		);
 
-			if (
-				attempt.status !==
-				AttemptStatus.IN_PROGRESS
-			) {
-				throw new AppError(
-					409,
-					"Attempt is no longer in progress",
-				);
-			}
+		if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+			throw new AppError(409, "Attempt is no longer in progress");
+		}
 
-			const now = new Date();
+		const now = new Date();
 
-			if (
-				isAttemptUnavailable(
-					attempt,
-					now,
-				)
-			) {
-				await autoSubmitLockedAttempt(
-					tx,
-					attempt.id,
-					now,
-					userId,
-					ipAddress,
-				);
+		if (isAttemptUnavailable(attempt, now)) {
+			await autoSubmitLockedAttempt(tx, attempt.id, now, userId, ipAddress);
 
-				return {
-					expired: true as const,
-				};
-			}
+			return {
+				expired: true as const,
+			};
+		}
 
-			const assessmentQuestion =
-				await tx.assessmentQuestion.findFirst(
-					{
-						where: {
-							id:
-								assessmentQuestionId,
-							assessmentId:
-								attempt.assessmentId,
-						},
-						select: {
-							id: true,
-							question: {
-								select: {
-									id: true,
-									type: true,
-									selectionMode:
-										true,
-									allowedLanguages:
-										true,
-									options: {
-										select: {
-											id: true,
-										},
-									},
-								},
-							},
-						},
-					},
-				);
-
-			if (!assessmentQuestion) {
-				throw new AppError(
-					404,
-					"Assessment question not found",
-				);
-			}
-
-			const question =
-				assessmentQuestion.question;
-
-			if (
-				question.type ===
-				QuestionType.MCQ
-			) {
-				if (
-					!(
-						"selectedOptionIds" in
-						input
-					)
-				) {
-					throw new AppError(
-						400,
-						"MCQ answer format is invalid",
-					);
-				}
-
-				if (
-					question.selectionMode ===
-						McqSelectionMode.SINGLE &&
-					input.selectedOptionIds
-						.length > 1
-				) {
-					throw new AppError(
-						400,
-						"SINGLE MCQ allows at most one selected option",
-					);
-				}
-
-				const validOptionIds =
-					new Set(
-						question.options.map(
-							(option) =>
-								option.id,
-						),
-					);
-
-				if (
-					input.selectedOptionIds.some(
-						(optionId) =>
-							!validOptionIds.has(
-								optionId,
-							),
-					)
-				) {
-					throw new AppError(
-						400,
-						"One or more selected options do not belong to this question",
-					);
-				}
-			} else if (
-				question.type ===
-					QuestionType.SHORT_TEXT ||
-				question.type ===
-					QuestionType.LONG_TEXT
-			) {
-				if (
-					!("answerText" in input)
-				) {
-					throw new AppError(
-						400,
-						"Text answer format is invalid",
-					);
-				}
-			} else if (
-				question.type ===
-				QuestionType.CODING
-			) {
-				if (
-					!(
-						"codeAnswer" in
-							input &&
-						"language" in input
-					)
-				) {
-					throw new AppError(
-						400,
-						"Coding answer format is invalid",
-					);
-				}
-
-				const allowedLanguages =
-					question.allowedLanguages.map(
-						(language) =>
-							language.toLowerCase(),
-					);
-
-				if (
-					!allowedLanguages.includes(
-						input.language,
-					)
-				) {
-					throw new AppError(
-						400,
-						"Selected programming language is not allowed for this question",
-					);
-				}
-			}
-
-			const answer =
-				await tx.answer.upsert({
-					where: {
-						attemptId_assessmentQuestionId:
-							{
-								attemptId:
-									attempt.id,
-								assessmentQuestionId,
-							},
-					},
-					create: {
-						attemptId:
-							attempt.id,
-						assessmentQuestionId,
-						answerText:
-							"answerText" in
-							input
-								? input.answerText
-								: null,
-						codeAnswer:
-							"codeAnswer" in
-							input
-								? input.codeAnswer
-								: null,
-						language:
-							"language" in
-							input
-								? input.language
-								: null,
-						lastSavedAt:
-							now,
-					},
-					update: {
-						answerText:
-							"answerText" in
-							input
-								? input.answerText
-								: null,
-						codeAnswer:
-							"codeAnswer" in
-							input
-								? input.codeAnswer
-								: null,
-						language:
-							"language" in
-							input
-								? input.language
-								: null,
-						lastSavedAt:
-							now,
-					},
+		const assessmentQuestion = await tx.assessmentQuestion.findFirst({
+			where: {
+				id: assessmentQuestionId,
+				assessmentId: attempt.assessmentId,
+			},
+			select: {
+				id: true,
+				question: {
 					select: {
 						id: true,
-						assessmentQuestionId:
-							true,
-						answerText: true,
-						codeAnswer: true,
-						language: true,
-						lastSavedAt: true,
-					},
-				});
-
-			await tx.answerSelectedOption.deleteMany(
-				{
-					where: {
-						answerId:
-							answer.id,
+						type: true,
+						selectionMode: true,
+						allowedLanguages: true,
+						options: {
+							select: {
+								id: true,
+							},
+						},
 					},
 				},
+			},
+		});
+
+		if (!assessmentQuestion) {
+			throw new AppError(404, "Assessment question not found");
+		}
+
+		const question = assessmentQuestion.question;
+
+		if (question.type === QuestionType.MCQ) {
+			if (!("selectedOptionIds" in input)) {
+				throw new AppError(400, "MCQ answer format is invalid");
+			}
+
+			if (
+				question.selectionMode === McqSelectionMode.SINGLE &&
+				input.selectedOptionIds.length > 1
+			) {
+				throw new AppError(
+					400,
+					"SINGLE MCQ allows at most one selected option",
+				);
+			}
+
+			const validOptionIds = new Set(
+				question.options.map((option) => option.id),
 			);
 
 			if (
-				"selectedOptionIds" in
-					input &&
-				input.selectedOptionIds
-					.length > 0
+				input.selectedOptionIds.some(
+					(optionId) => !validOptionIds.has(optionId),
+				)
 			) {
-				await tx.answerSelectedOption.createMany(
-					{
-						data: input.selectedOptionIds.map(
-							(optionId) => ({
-								answerId:
-									answer.id,
-								optionId,
-							}),
-						),
-					},
+				throw new AppError(
+					400,
+					"One or more selected options do not belong to this question",
 				);
 			}
+		} else if (
+			question.type === QuestionType.SHORT_TEXT ||
+			question.type === QuestionType.LONG_TEXT
+		) {
+			if (!("answerText" in input)) {
+				throw new AppError(400, "Text answer format is invalid");
+			}
+		} else if (question.type === QuestionType.CODING) {
+			if (!("codeAnswer" in input && "language" in input)) {
+				throw new AppError(400, "Coding answer format is invalid");
+			}
 
-			return {
-				expired: false as const,
-				answer: {
-					...answer,
-					selectedOptionIds:
-						"selectedOptionIds" in
-						input
-							? input.selectedOptionIds
-							: [],
+			const allowedLanguages = question.allowedLanguages.map((language) =>
+				language.toLowerCase(),
+			);
+
+			if (!allowedLanguages.includes(input.language)) {
+				throw new AppError(
+					400,
+					"Selected programming language is not allowed for this question",
+				);
+			}
+		}
+
+		const answer = await tx.answer.upsert({
+			where: {
+				attemptId_assessmentQuestionId: {
+					attemptId: attempt.id,
+					assessmentQuestionId,
 				},
-			};
-		},
-	);
+			},
+			create: {
+				attemptId: attempt.id,
+				assessmentQuestionId,
+				answerText: "answerText" in input ? input.answerText : null,
+				codeAnswer: "codeAnswer" in input ? input.codeAnswer : null,
+				language: "language" in input ? input.language : null,
+				lastSavedAt: now,
+			},
+			update: {
+				answerText: "answerText" in input ? input.answerText : null,
+				codeAnswer: "codeAnswer" in input ? input.codeAnswer : null,
+				language: "language" in input ? input.language : null,
+				lastSavedAt: now,
+			},
+			select: {
+				id: true,
+				assessmentQuestionId: true,
+				answerText: true,
+				codeAnswer: true,
+				language: true,
+				lastSavedAt: true,
+			},
+		});
+
+		await tx.answerSelectedOption.deleteMany({
+			where: {
+				answerId: answer.id,
+			},
+		});
+
+		if ("selectedOptionIds" in input && input.selectedOptionIds.length > 0) {
+			await tx.answerSelectedOption.createMany({
+				data: input.selectedOptionIds.map((optionId) => ({
+					answerId: answer.id,
+					optionId,
+				})),
+			});
+		}
+
+		return {
+			expired: false as const,
+			answer: {
+				...answer,
+				selectedOptionIds:
+					"selectedOptionIds" in input ? input.selectedOptionIds : [],
+			},
+		};
+	});
 
 	if (result.expired) {
-		throw new AppError(
-			410,
-			"Attempt time has expired",
-		);
+		throw new AppError(410, "Attempt time has expired");
 	}
 
 	return result.answer;
@@ -814,275 +607,102 @@ const recordProctorEvent = async (
 	ipAddress?: string,
 ) => {
 	const metadataSize = Buffer.byteLength(
-		JSON.stringify(
-			input.metadata ?? {},
-		),
+		JSON.stringify(input.metadata ?? {}),
 		"utf8",
 	);
 
-	if (
-		metadataSize >
-		ATTEMPT_CONSTANTS.MAX_PROCTOR_METADATA_BYTES
-	) {
-		throw new AppError(
-			400,
-			"Proctor event metadata is too large",
-		);
+	if (metadataSize > ATTEMPT_CONSTANTS.MAX_PROCTOR_METADATA_BYTES) {
+		throw new AppError(400, "Proctor event metadata is too large");
 	}
 
-	const result = await prisma.$transaction(
-		async (tx) => {
-			const candidate =
-				await getCandidateContext(
-					userId,
-					tx,
-				);
+	const result = await prisma.$transaction(async (tx) => {
+		const candidate = await getCandidateContext(userId, tx);
 
-			const attempt =
-				await lockOwnedAttempt(
-					tx,
-					candidate.candidateId,
-					attemptId,
-				);
+		const attempt = await lockOwnedAttempt(
+			tx,
+			candidate.candidateId,
+			attemptId,
+		);
 
-			if (
-				attempt.status !==
-				AttemptStatus.IN_PROGRESS
-			) {
-				throw new AppError(
-					409,
-					"Attempt is no longer in progress",
-				);
-			}
+		if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+			throw new AppError(409, "Attempt is no longer in progress");
+		}
 
-			const now = new Date();
+		const now = new Date();
 
-			if (
-				isAttemptUnavailable(
-					attempt,
-					now,
-				)
-			) {
-				await autoSubmitLockedAttempt(
-					tx,
-					attempt.id,
-					now,
-					userId,
-					ipAddress,
-				);
-
-				return {
-					expired: true as const,
-				};
-			}
-
-			const event =
-				await tx.proctorEvent.upsert({
-					where: {
-						attemptId_clientEventId:
-							{
-								attemptId:
-									attempt.id,
-								clientEventId:
-									input.clientEventId,
-							},
-					},
-					create: {
-						attemptId:
-							attempt.id,
-						clientEventId:
-							input.clientEventId,
-						eventType:
-							input.eventType,
-						occurredAt:
-							input.occurredAt,
-						...(input.metadata !==
-						undefined
-							? {
-									metadata:
-										input.metadata as Prisma.InputJsonValue,
-								}
-							: {}),
-					},
-					update: {},
-					select: {
-						id: true,
-						clientEventId:
-							true,
-						eventType: true,
-						occurredAt:
-							true,
-						createdAt: true,
-					},
-				});
-
-			const [
-				totalProctorEvents,
-				tabSwitchCount,
-			] = await Promise.all([
-				tx.proctorEvent.count({
-					where: {
-						attemptId:
-							attempt.id,
-					},
-				}),
-				tx.proctorEvent.count({
-					where: {
-						attemptId:
-							attempt.id,
-						eventType:
-							ProctorEventType.TAB_HIDDEN,
-					},
-				}),
-			]);
-
-			const isSuspicious =
-				totalProctorEvents >=
-				attempt.suspiciousThreshold;
-
-			await tx.attempt.update({
-				where: {
-					id: attempt.id,
-				},
-				data: {
-					tabSwitchCount,
-					isSuspicious,
-				},
-			});
-
-			if (
-				!attempt.isSuspicious &&
-				isSuspicious
-			) {
-				await auditService.create(
-					{
-						actorUserId:
-							userId,
-						action:
-							AUDIT_ACTIONS.ATTEMPT_FLAGGED_SUSPICIOUS,
-						entityType:
-							AUDIT_ENTITY_TYPES.ATTEMPT,
-						entityId:
-							attempt.id,
-						metadata: {
-							totalProctorEvents,
-							suspiciousThreshold:
-								attempt.suspiciousThreshold,
-						},
-						...(ipAddress
-							? {
-									ipAddress,
-								}
-							: {}),
-					},
-					tx,
-				);
-			}
+		if (isAttemptUnavailable(attempt, now)) {
+			await autoSubmitLockedAttempt(tx, attempt.id, now, userId, ipAddress);
 
 			return {
-				expired: false as const,
-				event,
-				totalProctorEvents,
+				expired: true as const,
+			};
+		}
+
+		const event = await tx.proctorEvent.upsert({
+			where: {
+				attemptId_clientEventId: {
+					attemptId: attempt.id,
+					clientEventId: input.clientEventId,
+				},
+			},
+			create: {
+				attemptId: attempt.id,
+				clientEventId: input.clientEventId,
+				eventType: input.eventType,
+				occurredAt: input.occurredAt,
+				...(input.metadata !== undefined
+					? {
+							metadata: input.metadata as Prisma.InputJsonValue,
+						}
+					: {}),
+			},
+			update: {},
+			select: {
+				id: true,
+				clientEventId: true,
+				eventType: true,
+				occurredAt: true,
+				createdAt: true,
+			},
+		});
+
+		const [totalProctorEvents, tabSwitchCount] = await Promise.all([
+			tx.proctorEvent.count({
+				where: {
+					attemptId: attempt.id,
+				},
+			}),
+			tx.proctorEvent.count({
+				where: {
+					attemptId: attempt.id,
+					eventType: ProctorEventType.TAB_HIDDEN,
+				},
+			}),
+		]);
+
+		const isSuspicious = totalProctorEvents >= attempt.suspiciousThreshold;
+
+		await tx.attempt.update({
+			where: {
+				id: attempt.id,
+			},
+			data: {
 				tabSwitchCount,
 				isSuspicious,
-			};
-		},
-	);
+			},
+		});
 
-	if (result.expired) {
-		throw new AppError(
-			410,
-			"Attempt time has expired",
-		);
-	}
-
-	return {
-		event: result.event,
-		totalProctorEvents:
-			result.totalProctorEvents,
-		tabSwitchCount:
-			result.tabSwitchCount,
-		isSuspicious:
-			result.isSuspicious,
-	};
-};
-
-const submit = async (
-	userId: string,
-	attemptId: string,
-	ipAddress?: string,
-) => {
-	return prisma.$transaction(
-		async (tx) => {
-			const candidate =
-				await getCandidateContext(
-					userId,
-					tx,
-				);
-
-			const attempt =
-				await lockOwnedAttempt(
-					tx,
-					candidate.candidateId,
-					attemptId,
-				);
-
-			if (
-				attempt.status !==
-				AttemptStatus.IN_PROGRESS
-			) {
-				throw new AppError(
-					409,
-					"Attempt has already been submitted",
-				);
-			}
-
-			const now = new Date();
-
-			if (
-				isAttemptUnavailable(
-					attempt,
-					now,
-				)
-			) {
-				return autoSubmitLockedAttempt(
-					tx,
-					attempt.id,
-					now,
-					userId,
-					ipAddress,
-				);
-			}
-
-			const submitted =
-				await tx.attempt.update({
-					where: {
-						id: attempt.id,
-					},
-					data: {
-						status:
-							AttemptStatus.SUBMITTED,
-						submittedAt:
-							now,
-					},
-					select: {
-						id: true,
-						status: true,
-						submittedAt:
-							true,
-					},
-				});
-
+		if (!attempt.isSuspicious && isSuspicious) {
 			await auditService.create(
 				{
-					actorUserId:
-						userId,
-					action:
-						AUDIT_ACTIONS.ATTEMPT_SUBMITTED,
-					entityType:
-						AUDIT_ENTITY_TYPES.ATTEMPT,
-					entityId:
-						submitted.id,
+					actorUserId: userId,
+					action: AUDIT_ACTIONS.ATTEMPT_FLAGGED_SUSPICIOUS,
+					entityType: AUDIT_ENTITY_TYPES.ATTEMPT,
+					entityId: attempt.id,
+					metadata: {
+						totalProctorEvents,
+						suspiciousThreshold: attempt.suspiciousThreshold,
+					},
 					...(ipAddress
 						? {
 								ipAddress,
@@ -1091,10 +711,85 @@ const submit = async (
 				},
 				tx,
 			);
+		}
 
-			return submitted;
-		},
-	);
+		return {
+			expired: false as const,
+			event,
+			totalProctorEvents,
+			tabSwitchCount,
+			isSuspicious,
+		};
+	});
+
+	if (result.expired) {
+		throw new AppError(410, "Attempt time has expired");
+	}
+
+	return {
+		event: result.event,
+		totalProctorEvents: result.totalProctorEvents,
+		tabSwitchCount: result.tabSwitchCount,
+		isSuspicious: result.isSuspicious,
+	};
+};
+
+const submit = async (
+	userId: string,
+	attemptId: string,
+	ipAddress?: string,
+) => {
+	return prisma.$transaction(async (tx) => {
+		const candidate = await getCandidateContext(userId, tx);
+
+		const attempt = await lockOwnedAttempt(
+			tx,
+			candidate.candidateId,
+			attemptId,
+		);
+
+		if (attempt.status !== AttemptStatus.IN_PROGRESS) {
+			throw new AppError(409, "Attempt has already been submitted");
+		}
+
+		const now = new Date();
+
+		if (isAttemptUnavailable(attempt, now)) {
+			return autoSubmitLockedAttempt(tx, attempt.id, now, userId, ipAddress);
+		}
+
+		const submitted = await tx.attempt.update({
+			where: {
+				id: attempt.id,
+			},
+			data: {
+				status: AttemptStatus.SUBMITTED,
+				submittedAt: now,
+			},
+			select: {
+				id: true,
+				status: true,
+				submittedAt: true,
+			},
+		});
+
+		await auditService.create(
+			{
+				actorUserId: userId,
+				action: AUDIT_ACTIONS.ATTEMPT_SUBMITTED,
+				entityType: AUDIT_ENTITY_TYPES.ATTEMPT,
+				entityId: submitted.id,
+				...(ipAddress
+					? {
+							ipAddress,
+						}
+					: {}),
+			},
+			tx,
+		);
+
+		return submitted;
+	});
 };
 
 export const attemptService = {

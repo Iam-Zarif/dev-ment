@@ -1,51 +1,33 @@
 import type { Server } from "node:http";
-import {
-	closeInvitationEmailQueue,
-} from "./app/modules/invitation/invitation.queue.js";
+import { closeInvitationEmailQueue } from "./app/modules/invitation/invitation.queue.js";
 import {
 	startInvitationEmailWorker,
 	stopInvitationEmailWorker,
 } from "./app/modules/invitation/invitation.worker.js";
 import app from "./app.js";
 import { config } from "./config/index.js";
-import {
-	startJobs,
-	stopJobs,
-} from "./jobs/index.js";
-import {
-	connectDatabase,
-	disconnectDatabase,
-} from "./lib/prisma/index.js";
-import {
-	connectRedis,
-	disconnectRedis,
-} from "./lib/redis/index.js";
+import { startJobs, stopJobs } from "./jobs/index.js";
+import { connectDatabase, disconnectDatabase } from "./lib/prisma/index.js";
+import { connectRedis, disconnectRedis } from "./lib/redis/index.js";
 import { ensureSeedData } from "./seed/index.js";
 import { logger } from "./shared/utils/index.js";
 
 let server: Server | null = null;
 
-const shutdown = async (
-	signal: string,
-) => {
-	logger.info(
-		{ signal },
-		"Shutdown initiated",
-	);
+const shutdown = async (signal: string) => {
+	logger.info({ signal }, "Shutdown initiated");
 
 	if (server) {
-		await new Promise<void>(
-			(resolve, reject) => {
-				server?.close((error) => {
-					if (error) {
-						reject(error);
-						return;
-					}
+		await new Promise<void>((resolve, reject) => {
+			server?.close((error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
 
-					resolve();
-				});
-			},
-		);
+				resolve();
+			});
+		});
 	}
 
 	stopJobs();
@@ -55,10 +37,7 @@ const shutdown = async (
 		closeInvitationEmailQueue(),
 	]);
 
-	await Promise.allSettled([
-		disconnectRedis(),
-		disconnectDatabase(),
-	]);
+	await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
 
 	process.exit(0);
 };
@@ -69,48 +48,29 @@ export const bootstrap = async () => {
 		await ensureSeedData();
 		await connectRedis();
 
-		if (
-			config.invitationEmail
-				.workerEnabled
-		) {
+		if (config.invitationEmail.workerEnabled) {
 			await startInvitationEmailWorker();
 		}
 
 		startJobs();
 
-		server = app.listen(
-			config.app.port,
-			() => {
-				logger.info(
-					{
-						port:
-							config.app.port,
-						apiBaseUrl:
-							config.app
-								.apiBaseUrl,
-					},
-					`${config.app.name} server running`,
-				);
-			},
-		);
+		server = app.listen(config.app.port, () => {
+			logger.info(
+				{
+					port: config.app.port,
+					apiBaseUrl: config.app.apiBaseUrl,
+				},
+				`${config.app.name} server running`,
+			);
+		});
 
-		process.once(
-			"SIGINT",
-			() => {
-				void shutdown(
-					"SIGINT",
-				);
-			},
-		);
+		process.once("SIGINT", () => {
+			void shutdown("SIGINT");
+		});
 
-		process.once(
-			"SIGTERM",
-			() => {
-				void shutdown(
-					"SIGTERM",
-				);
-			},
-		);
+		process.once("SIGTERM", () => {
+			void shutdown("SIGTERM");
+		});
 	} catch (error) {
 		logger.fatal(
 			{
@@ -126,10 +86,7 @@ export const bootstrap = async () => {
 			closeInvitationEmailQueue(),
 		]);
 
-		await Promise.allSettled([
-			disconnectRedis(),
-			disconnectDatabase(),
-		]);
+		await Promise.allSettled([disconnectRedis(), disconnectDatabase()]);
 
 		process.exit(1);
 	}

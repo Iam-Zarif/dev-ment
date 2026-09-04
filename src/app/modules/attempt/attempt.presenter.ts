@@ -126,8 +126,7 @@ export const presentAttemptSession = (
 			serverNow: now,
 			remainingSeconds,
 			canSubmit:
-				session.status === AttemptStatus.IN_PROGRESS &&
-				remainingSeconds > 0,
+				session.status === AttemptStatus.IN_PROGRESS && remainingSeconds > 0,
 		},
 		invitationId: session.invitation.id,
 		applicationId: session.invitation.application.id,

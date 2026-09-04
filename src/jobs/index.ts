@@ -4,9 +4,7 @@ import { config } from "../config/index.js";
 import { logger } from "../shared/utils/index.js";
 import { autoSubmitExpiredAttempts } from "./attemptExpiry.job.js";
 
-let attemptExpiryTask:
-	| ReturnType<typeof cron.schedule>
-	| null = null;
+let attemptExpiryTask: ReturnType<typeof cron.schedule> | null = null;
 
 export const startJobs = (): void => {
 	if (
@@ -41,8 +39,7 @@ export const startJobs = (): void => {
 				});
 		},
 		{
-			timezone:
-				config.cron.timezone,
+			timezone: config.cron.timezone,
 			noOverlap: true,
 		},
 	);

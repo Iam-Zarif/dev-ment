@@ -12,10 +12,7 @@ const mcqAnswerSchema = z
 	.object({
 		selectedOptionIds: z
 			.array(z.uuid())
-			.max(
-				ATTEMPT_CONSTANTS.MAX_SELECTED_OPTIONS,
-				"Too many selected options",
-			)
+			.max(ATTEMPT_CONSTANTS.MAX_SELECTED_OPTIONS, "Too many selected options")
 			.refine((ids) => new Set(ids).size === ids.length, {
 				message: "Selected option IDs must be unique",
 			}),
@@ -26,10 +23,7 @@ const textAnswerSchema = z
 	.object({
 		answerText: z
 			.string()
-			.max(
-				ATTEMPT_CONSTANTS.MAX_TEXT_ANSWER_LENGTH,
-				"Answer text is too long",
-			),
+			.max(ATTEMPT_CONSTANTS.MAX_TEXT_ANSWER_LENGTH, "Answer text is too long"),
 	})
 	.strict();
 
@@ -37,10 +31,7 @@ const codingAnswerSchema = z
 	.object({
 		codeAnswer: z
 			.string()
-			.max(
-				ATTEMPT_CONSTANTS.MAX_CODE_ANSWER_LENGTH,
-				"Code answer is too long",
-			),
+			.max(ATTEMPT_CONSTANTS.MAX_CODE_ANSWER_LENGTH, "Code answer is too long"),
 		language: z
 			.string()
 			.trim()

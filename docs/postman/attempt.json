@@ -1,641 +1,641 @@
 {
-  "info": {
-    "_postman_id": "15a80a85-3873-4965-93f9-devment-attempt-final",
-    "name": "Dev-ment - Attempt APIs",
-    "description": "Candidate assessment attempt, safe question delivery, autosave, proctor events and submission.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5001/api/v1"
-    },
-    {
-      "key": "candidateToken",
-      "value": ""
-    },
-    {
-      "key": "invitationId",
-      "value": ""
-    },
-    {
-      "key": "attemptId",
-      "value": ""
-    },
-    {
-      "key": "mcqAssessmentQuestionId",
-      "value": ""
-    },
-    {
-      "key": "mcqOptionId",
-      "value": ""
-    },
-    {
-      "key": "textAssessmentQuestionId",
-      "value": ""
-    },
-    {
-      "key": "codingAssessmentQuestionId",
-      "value": ""
-    }
-  ],
-  "item": [
-    {
-      "name": "01 - Start Attempt",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/start"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 201\", function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Attempt started\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.attempt.status).to.eql(\"IN_PROGRESS\");",
-              "  pm.expect(json.data.attempt.id).to.be.a(\"string\");",
-              "  pm.expect(json.data.attempt.expiresAt).to.exist;",
-              "  pm.expect(json.data.attempt.serverNow).to.exist;",
-              "  pm.expect(json.data.questions).to.be.an(\"array\");",
-              "});",
-              "",
-              "pm.collectionVariables.set(\"attemptId\", json.data.attempt.id);",
-              "",
-              "const questions = json.data.questions || [];",
-              "",
-              "const mcq = questions.find((q) => q.type === \"MCQ\");",
-              "if (mcq) {",
-              "  pm.collectionVariables.set(\"mcqAssessmentQuestionId\", mcq.assessmentQuestionId);",
-              "  if (mcq.options?.[0]?.id) {",
-              "    pm.collectionVariables.set(\"mcqOptionId\", mcq.options[0].id);",
-              "  }",
-              "}",
-              "",
-              "const text = questions.find((q) => q.type === \"SHORT_TEXT\" || q.type === \"LONG_TEXT\");",
-              "if (text) {",
-              "  pm.collectionVariables.set(\"textAssessmentQuestionId\", text.assessmentQuestionId);",
-              "}",
-              "",
-              "const coding = questions.find((q) => q.type === \"CODING\");",
-              "if (coding) {",
-              "  pm.collectionVariables.set(\"codingAssessmentQuestionId\", coding.assessmentQuestionId);",
-              "}",
-              "",
-              "pm.test(\"MCQ correct answers are not leaked\", function () {",
-              "  questions.filter((q) => q.type === \"MCQ\").forEach((q) => {",
-              "    (q.options || []).forEach((option) => {",
-              "      pm.expect(option).to.not.have.property(\"isCorrect\");",
-              "    });",
-              "  });",
-              "});",
-              "",
-              "pm.test(\"Coding test cases are not leaked\", function () {",
-              "  questions.filter((q) => q.type === \"CODING\").forEach((q) => {",
-              "    pm.expect(q).to.not.have.property(\"codingTestCases\");",
-              "    pm.expect(q).to.not.have.property(\"testCases\");",
-              "  });",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "02 - Resume Attempt",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Timer is server authoritative\", function () {",
-              "  pm.expect(json.data.attempt.serverNow).to.exist;",
-              "  pm.expect(json.data.attempt.expiresAt).to.exist;",
-              "  pm.expect(json.data.attempt.remainingSeconds).to.be.a(\"number\");",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "03 - Autosave MCQ",
-      "request": {
-        "method": "PUT",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"selectedOptionIds\": [\n    \"{{mcqOptionId}}\"\n  ]\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{mcqAssessmentQuestionId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"MCQ autosaved\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.selectedOptionIds).to.be.an(\"array\");",
-              "  pm.expect(json.data.lastSavedAt).to.exist;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "04 - Autosave Text Answer",
-      "request": {
-        "method": "PUT",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"answerText\": \"REST is an architectural style for designing network-based APIs.\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{textAssessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "05 - Autosave Coding Answer",
-      "request": {
-        "method": "PUT",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"codeAnswer\": \"function reverseString(value) { return value.split('').reverse().join(''); }\",\n  \"language\": \"javascript\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{codingAssessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "06 - Record TAB HIDDEN",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {\n    \"source\": \"postman-test\"\n  }\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 201\", function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Tab event counted\", function () {",
-              "  pm.expect(json.data.tabSwitchCount).to.be.at.least(1);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "07 - Record WINDOW BLUR",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"WINDOW_BLUR\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {}\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
-      }
-    },
-    {
-      "name": "08 - Record FULLSCREEN EXIT",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"FULLSCREEN_EXIT\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {}\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 201\", function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Suspicious threshold can flag attempt\", function () {",
-              "  pm.expect(json.data.totalProctorEvents).to.be.at.least(1);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "09 - Resume And Verify Answers",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Saved answers are returned\", function () {",
-              "  pm.expect(json.data.answers).to.be.an(\"array\");",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "10 - Start Same Invitation Again Should Fail",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/start"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Second attempt is rejected\", function () {",
-              "  pm.response.to.have.status(409);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "11 - Submit Attempt",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Attempt submitted\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.status).to.be.oneOf([\"SUBMITTED\", \"AUTO_SUBMITTED\"]);",
-              "  pm.expect(json.data.submittedAt).to.exist;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "12 - Save After Submit Should Fail",
-      "request": {
-        "method": "PUT",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"answerText\": \"This must not be saved after submission\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{textAssessmentQuestionId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Submitted attempt is immutable\", function () {",
-              "  pm.response.to.have.status(409);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "13 - Submit Again Should Fail",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Second submit rejected\", function () {",
-              "  pm.response.to.have.status(409);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Negative Tests",
-      "item": [
-        {
-          "name": "Start Without Accepted Invitation",
-          "request": {
-            "method": "POST",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invitationId\": \"{{$guid}}\"\n}"
-            },
-            "url": "{{baseUrl}}/attempts/start"
-          }
-        },
-        {
-          "name": "Invalid Attempt ID",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/attempts/not-a-uuid"
-          }
-        },
-        {
-          "name": "Wrong MCQ Option",
-          "request": {
-            "method": "PUT",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"selectedOptionIds\": [\n    \"{{$guid}}\"\n  ]\n}"
-            },
-            "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{mcqAssessmentQuestionId}}"
-          }
-        }
-      ]
-    }
-  ]
+	"info": {
+		"_postman_id": "15a80a85-3873-4965-93f9-devment-attempt-final",
+		"name": "Dev-ment - Attempt APIs",
+		"description": "Candidate assessment attempt, safe question delivery, autosave, proctor events and submission.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5001/api/v1"
+		},
+		{
+			"key": "candidateToken",
+			"value": ""
+		},
+		{
+			"key": "invitationId",
+			"value": ""
+		},
+		{
+			"key": "attemptId",
+			"value": ""
+		},
+		{
+			"key": "mcqAssessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "mcqOptionId",
+			"value": ""
+		},
+		{
+			"key": "textAssessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "codingAssessmentQuestionId",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Start Attempt",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/start"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Attempt started\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.attempt.status).to.eql(\"IN_PROGRESS\");",
+							"  pm.expect(json.data.attempt.id).to.be.a(\"string\");",
+							"  pm.expect(json.data.attempt.expiresAt).to.exist;",
+							"  pm.expect(json.data.attempt.serverNow).to.exist;",
+							"  pm.expect(json.data.questions).to.be.an(\"array\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"attemptId\", json.data.attempt.id);",
+							"",
+							"const questions = json.data.questions || [];",
+							"",
+							"const mcq = questions.find((q) => q.type === \"MCQ\");",
+							"if (mcq) {",
+							"  pm.collectionVariables.set(\"mcqAssessmentQuestionId\", mcq.assessmentQuestionId);",
+							"  if (mcq.options?.[0]?.id) {",
+							"    pm.collectionVariables.set(\"mcqOptionId\", mcq.options[0].id);",
+							"  }",
+							"}",
+							"",
+							"const text = questions.find((q) => q.type === \"SHORT_TEXT\" || q.type === \"LONG_TEXT\");",
+							"if (text) {",
+							"  pm.collectionVariables.set(\"textAssessmentQuestionId\", text.assessmentQuestionId);",
+							"}",
+							"",
+							"const coding = questions.find((q) => q.type === \"CODING\");",
+							"if (coding) {",
+							"  pm.collectionVariables.set(\"codingAssessmentQuestionId\", coding.assessmentQuestionId);",
+							"}",
+							"",
+							"pm.test(\"MCQ correct answers are not leaked\", function () {",
+							"  questions.filter((q) => q.type === \"MCQ\").forEach((q) => {",
+							"    (q.options || []).forEach((option) => {",
+							"      pm.expect(option).to.not.have.property(\"isCorrect\");",
+							"    });",
+							"  });",
+							"});",
+							"",
+							"pm.test(\"Coding test cases are not leaked\", function () {",
+							"  questions.filter((q) => q.type === \"CODING\").forEach((q) => {",
+							"    pm.expect(q).to.not.have.property(\"codingTestCases\");",
+							"    pm.expect(q).to.not.have.property(\"testCases\");",
+							"  });",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Resume Attempt",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Timer is server authoritative\", function () {",
+							"  pm.expect(json.data.attempt.serverNow).to.exist;",
+							"  pm.expect(json.data.attempt.expiresAt).to.exist;",
+							"  pm.expect(json.data.attempt.remainingSeconds).to.be.a(\"number\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Autosave MCQ",
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"selectedOptionIds\": [\n    \"{{mcqOptionId}}\"\n  ]\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{mcqAssessmentQuestionId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"MCQ autosaved\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.selectedOptionIds).to.be.an(\"array\");",
+							"  pm.expect(json.data.lastSavedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "04 - Autosave Text Answer",
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"answerText\": \"REST is an architectural style for designing network-based APIs.\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{textAssessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "05 - Autosave Coding Answer",
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"codeAnswer\": \"function reverseString(value) { return value.split('').reverse().join(''); }\",\n  \"language\": \"javascript\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{codingAssessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "06 - Record TAB HIDDEN",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {\n    \"source\": \"postman-test\"\n  }\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Tab event counted\", function () {",
+							"  pm.expect(json.data.tabSwitchCount).to.be.at.least(1);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "07 - Record WINDOW BLUR",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"WINDOW_BLUR\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {}\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
+			}
+		},
+		{
+			"name": "08 - Record FULLSCREEN EXIT",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"FULLSCREEN_EXIT\",\n  \"occurredAt\": \"{{$isoTimestamp}}\",\n  \"metadata\": {}\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Suspicious threshold can flag attempt\", function () {",
+							"  pm.expect(json.data.totalProctorEvents).to.be.at.least(1);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "09 - Resume And Verify Answers",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Saved answers are returned\", function () {",
+							"  pm.expect(json.data.answers).to.be.an(\"array\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "10 - Start Same Invitation Again Should Fail",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/start"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Second attempt is rejected\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "11 - Submit Attempt",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Attempt submitted\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.status).to.be.oneOf([\"SUBMITTED\", \"AUTO_SUBMITTED\"]);",
+							"  pm.expect(json.data.submittedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "12 - Save After Submit Should Fail",
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"answerText\": \"This must not be saved after submission\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{textAssessmentQuestionId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Submitted attempt is immutable\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "13 - Submit Again Should Fail",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Second submit rejected\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Negative Tests",
+			"item": [
+				{
+					"name": "Start Without Accepted Invitation",
+					"request": {
+						"method": "POST",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{candidateToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invitationId\": \"{{$guid}}\"\n}"
+						},
+						"url": "{{baseUrl}}/attempts/start"
+					}
+				},
+				{
+					"name": "Invalid Attempt ID",
+					"request": {
+						"method": "GET",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{candidateToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/attempts/not-a-uuid"
+					}
+				},
+				{
+					"name": "Wrong MCQ Option",
+					"request": {
+						"method": "PUT",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{candidateToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"selectedOptionIds\": [\n    \"{{$guid}}\"\n  ]\n}"
+						},
+						"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{mcqAssessmentQuestionId}}"
+					}
+				}
+			]
+		}
+	]
 }
