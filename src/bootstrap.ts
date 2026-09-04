@@ -9,6 +9,10 @@ import {
 import app from "./app.js";
 import { config } from "./config/index.js";
 import {
+	startJobs,
+	stopJobs,
+} from "./jobs/index.js";
+import {
 	connectDatabase,
 	disconnectDatabase,
 } from "./lib/prisma/index.js";
@@ -44,6 +48,8 @@ const shutdown = async (
 		);
 	}
 
+	stopJobs();
+
 	await Promise.allSettled([
 		stopInvitationEmailWorker(),
 		closeInvitationEmailQueue(),
@@ -70,6 +76,8 @@ export const bootstrap = async () => {
 			await startInvitationEmailWorker();
 		}
 
+		startJobs();
+
 		server = app.listen(
 			config.app.port,
 			() => {
@@ -86,18 +94,32 @@ export const bootstrap = async () => {
 			},
 		);
 
-		process.once("SIGINT", () => {
-			void shutdown("SIGINT");
-		});
+		process.once(
+			"SIGINT",
+			() => {
+				void shutdown(
+					"SIGINT",
+				);
+			},
+		);
 
-		process.once("SIGTERM", () => {
-			void shutdown("SIGTERM");
-		});
+		process.once(
+			"SIGTERM",
+			() => {
+				void shutdown(
+					"SIGTERM",
+				);
+			},
+		);
 	} catch (error) {
 		logger.fatal(
-			{ err: error },
+			{
+				err: error,
+			},
 			"Application startup failed",
 		);
+
+		stopJobs();
 
 		await Promise.allSettled([
 			stopInvitationEmailWorker(),
