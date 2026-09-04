@@ -8,12 +8,29 @@ import {
 	assessmentQuestionParamsSchema,
 	attachAssessmentQuestionSchema,
 	createAssessmentSchema,
+	publishedAssessmentListQuerySchema,
 	reorderAssessmentQuestionsSchema,
 	updateAssessmentQuestionSchema,
 	updateAssessmentSchema,
 } from "../modules/assessment/assessment.validation.js";
 
 const router = Router();
+
+router.get(
+	"/published",
+	validateRequest({
+		query: publishedAssessmentListQuerySchema,
+	}),
+	assessmentController.getPublished,
+);
+
+router.get(
+	"/published/:id",
+	validateRequest({
+		params: idParamSchema,
+	}),
+	assessmentController.getPublishedById,
+);
 
 router.use(auth(UserRole.RECRUITER));
 

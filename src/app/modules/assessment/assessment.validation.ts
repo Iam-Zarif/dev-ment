@@ -244,3 +244,30 @@ export type UpdateAssessmentQuestionInput = z.infer<
 export type ReorderAssessmentQuestionsInput = z.infer<
 	typeof reorderAssessmentQuestionsSchema
 >;
+
+export const publishedAssessmentListQuerySchema = z
+	.object({
+		page: z.coerce
+			.number()
+			.int()
+			.positive()
+			.default(APP_CONSTANTS.DEFAULT_PAGE),
+		limit: z.coerce
+			.number()
+			.int()
+			.positive()
+			.max(APP_CONSTANTS.MAX_LIMIT)
+			.default(APP_CONSTANTS.DEFAULT_LIMIT),
+		search: z
+			.string()
+			.trim()
+			.min(1)
+			.max(ASSESSMENT_LIMITS.SEARCH_MAX_LENGTH)
+			.optional(),
+		difficulty: difficultySchema.optional(),
+	})
+	.strict();
+
+export type PublishedAssessmentListQuery = z.infer<
+	typeof publishedAssessmentListQuerySchema
+>;

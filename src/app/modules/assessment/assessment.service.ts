@@ -21,6 +21,7 @@ import type {
 	AssessmentListQuery,
 	AttachAssessmentQuestionInput,
 	CreateAssessmentInput,
+	PublishedAssessmentListQuery,
 	ReorderAssessmentQuestionsInput,
 	UpdateAssessmentInput,
 	UpdateAssessmentQuestionInput,
@@ -1065,6 +1066,190 @@ const remove = async (
 	});
 };
 
+const getPublished = async (query: PublishedAssessmentListQuery) => {
+	const pagination = calculatePagination({
+		page: query.page,
+		limit: query.limit,
+		sortBy: "publishedAt",
+		sortOrder: "desc",
+	});
+
+	const now = new Date();
+
+	const where: Prisma.AssessmentWhereInput = {
+		status: AssessmentStatus.PUBLISHED,
+		deletedAt: null,
+		OR: [
+			{
+				closesAt: null,
+			},
+			{
+				closesAt: {
+					gt: now,
+				},
+			},
+		],
+		company: {
+			is: {
+				deletedAt: null,
+			},
+		},
+		...(query.difficulty
+			? {
+					difficulty: query.difficulty,
+				}
+			: {}),
+		...(query.search
+			? {
+					AND: [
+						{
+							OR: [
+								{
+									title: {
+										contains: query.search,
+										mode: "insensitive",
+									},
+								},
+								{
+									jobRole: {
+										contains: query.search,
+										mode: "insensitive",
+									},
+								},
+								{
+									company: {
+										is: {
+											name: {
+												contains: query.search,
+												mode: "insensitive",
+											},
+										},
+									},
+								},
+							],
+						},
+					],
+				}
+			: {}),
+	};
+
+	const [assessments, total] = await prisma.$transaction([
+		prisma.assessment.findMany({
+			where,
+			skip: pagination.skip,
+			take: pagination.limit,
+			orderBy: {
+				publishedAt: "desc",
+			},
+			select: {
+				id: true,
+				title: true,
+				jobRole: true,
+				descriptionHtml: true,
+				skills: true,
+				difficulty: true,
+				durationMinutes: true,
+				passPercentage: true,
+				applicationDeadline: true,
+				opensAt: true,
+				closesAt: true,
+				publishedAt: true,
+				company: {
+					select: {
+						id: true,
+						name: true,
+						logoUrl: true,
+						websiteUrl: true,
+					},
+				},
+				_count: {
+					select: {
+						assessmentQuestions: true,
+					},
+				},
+			},
+		}),
+		prisma.assessment.count({
+			where,
+		}),
+	]);
+
+	return {
+		items: assessments.map((assessment) => ({
+			...assessment,
+			applicationOpen:
+				!assessment.applicationDeadline ||
+				assessment.applicationDeadline >= now,
+		})),
+		meta: createPaginationMeta(pagination.page, pagination.limit, total),
+	};
+};
+
+const getPublishedById = async (assessmentId: string) => {
+	const now = new Date();
+
+	const assessment = await prisma.assessment.findFirst({
+		where: {
+			id: assessmentId,
+			status: AssessmentStatus.PUBLISHED,
+			deletedAt: null,
+			OR: [
+				{
+					closesAt: null,
+				},
+				{
+					closesAt: {
+						gt: now,
+					},
+				},
+			],
+			company: {
+				is: {
+					deletedAt: null,
+				},
+			},
+		},
+		select: {
+			id: true,
+			title: true,
+			jobRole: true,
+			descriptionHtml: true,
+			instructionsHtml: true,
+			skills: true,
+			difficulty: true,
+			durationMinutes: true,
+			passPercentage: true,
+			applicationDeadline: true,
+			opensAt: true,
+			closesAt: true,
+			publishedAt: true,
+			company: {
+				select: {
+					id: true,
+					name: true,
+					logoUrl: true,
+					websiteUrl: true,
+				},
+			},
+			_count: {
+				select: {
+					assessmentQuestions: true,
+				},
+			},
+		},
+	});
+
+	if (!assessment) {
+		throw new AppError(404, "Published assessment not found");
+	}
+
+	return {
+		...assessment,
+		applicationOpen:
+			!assessment.applicationDeadline || assessment.applicationDeadline >= now,
+	};
+};
+
 export const assessmentService = {
 	create,
 	getAll,
@@ -1077,4 +1262,6 @@ export const assessmentService = {
 	publish,
 	close,
 	remove,
+	getPublished,
+	getPublishedById,
 };

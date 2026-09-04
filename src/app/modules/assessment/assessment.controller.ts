@@ -6,6 +6,7 @@ import type {
 	AssessmentListQuery,
 	AttachAssessmentQuestionInput,
 	CreateAssessmentInput,
+	PublishedAssessmentListQuery,
 	ReorderAssessmentQuestionsInput,
 	UpdateAssessmentInput,
 	UpdateAssessmentQuestionInput,
@@ -189,6 +190,28 @@ const remove = catchAsync(async (req, res) => {
 	});
 });
 
+const getPublished = catchAsync(async (req, res) => {
+	const data = await assessmentService.getPublished(
+		req.query as unknown as PublishedAssessmentListQuery,
+	);
+
+	return sendResponse(res, {
+		statusCode: 200,
+		message: "Published assessments retrieved successfully",
+		data,
+	});
+});
+
+const getPublishedById = catchAsync(async (req, res) => {
+	const data = await assessmentService.getPublishedById(getParam(req, "id"));
+
+	return sendResponse(res, {
+		statusCode: 200,
+		message: "Published assessment retrieved successfully",
+		data,
+	});
+});
+
 export const assessmentController = {
 	create,
 	getAll,
@@ -201,4 +224,6 @@ export const assessmentController = {
 	publish,
 	close,
 	remove,
+	getPublished,
+	getPublishedById,
 };
