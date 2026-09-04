@@ -1,0 +1,491 @@
+{
+	"info": {
+		"_postman_id": "ce42db9a-devment-payment-final",
+		"name": "Dev-ment - Payment APIs",
+		"description": "Stripe Checkout payments, recruiter credit purchases, payment history and credit balance.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5001/api/v1"
+		},
+		{
+			"key": "recruiterToken",
+			"value": ""
+		},
+		{
+			"key": "candidateToken",
+			"value": ""
+		},
+		{
+			"key": "paymentId",
+			"value": ""
+		},
+		{
+			"key": "checkoutUrl",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Get Pricing Plans",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/payments/plans"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Pricing plans returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data).to.be.an(\"array\");",
+							"});",
+							"",
+							"const codes = json.data.map((plan) => plan.code);",
+							"",
+							"pm.test(\"Expected plans exist\", function () {",
+							"  pm.expect(codes).to.include(\"FREE\");",
+							"  pm.expect(codes).to.include(\"PLUS\");",
+							"  pm.expect(codes).to.include(\"PRO\");",
+							"  pm.expect(codes).to.include(\"PREMIUM\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Get Credit Balance Before Purchase",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments/credits"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Credit summary returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.availableCredits).to.be.a(\"number\");",
+							"  pm.expect(json.data.freeCredits).to.be.a(\"number\");",
+							"  pm.expect(json.data.purchasedCredits).to.be.a(\"number\");",
+							"  pm.expect(json.data.grants).to.be.an(\"array\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "03 - Create PRO Checkout",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"planCode\": \"PRO\"\n}"
+				},
+				"url": "{{baseUrl}}/payments/checkout"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 201\", function () {",
+							"  pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Checkout session created\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.status).to.eql(\"PENDING\");",
+							"  pm.expect(json.data.paymentId).to.be.a(\"string\");",
+							"  pm.expect(json.data.checkoutSessionId).to.be.a(\"string\");",
+							"  pm.expect(json.data.checkoutUrl).to.be.a(\"string\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"paymentId\", json.data.paymentId);",
+							"pm.collectionVariables.set(\"checkoutUrl\", json.data.checkoutUrl);"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "04 - Get Pending Payment",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments/{{paymentId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Payment belongs to recruiter\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.id).to.eql(pm.collectionVariables.get(\"paymentId\"));",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "05 - Get My Payments",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments?page=1&limit=20"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Payment history returned\", function () {",
+							"  pm.expect(json.data.items).to.be.an(\"array\");",
+							"  pm.expect(json.data.meta).to.be.an(\"object\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "06 - Filter Pending Payments",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments?status=PENDING&page=1&limit=20"
+			}
+		},
+		{
+			"name": "07 - Checkout Success Landing",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/payments/success?session_id=cs_test_example"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Landing does not grant credits directly\", function () {",
+							"  pm.expect(json.data.creditGrantPendingWebhook).to.eql(true);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "08 - After Stripe Payment Get PAID Payment",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments/{{paymentId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Payment fulfilled by webhook\", function () {",
+							"  pm.expect(json.data.status).to.eql(\"PAID\");",
+							"  pm.expect(json.data.paidAt).to.exist;",
+							"  pm.expect(json.data.creditGrant).to.be.an(\"object\");",
+							"  pm.expect(json.data.creditGrant.totalCredits).to.be.above(0);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "09 - Get Credits After Purchase",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments/credits"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Purchased credits exist\", function () {",
+							"  pm.expect(json.data.purchasedCredits).to.be.above(0);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "10 - FREE Checkout Should Fail",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"planCode\": \"FREE\"\n}"
+				},
+				"url": "{{baseUrl}}/payments/checkout"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"FREE checkout rejected\", function () {",
+							"  pm.response.to.have.status(400);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "11 - Invalid Plan Should Fail",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"planCode\": \"INVALID\"\n}"
+				},
+				"url": "{{baseUrl}}/payments/checkout"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Validation rejects invalid plan\", function () {",
+							"  pm.response.to.have.status(400);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "12 - Candidate Cannot Checkout",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"planCode\": \"PRO\"\n}"
+				},
+				"url": "{{baseUrl}}/payments/checkout"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Candidate forbidden\", function () {",
+							"  pm.response.to.have.status(403);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "13 - Unknown Payment Should Fail",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/payments/{{$guid}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Unknown payment returns 404\", function () {",
+							"  pm.response.to.have.status(404);",
+							"});"
+						]
+					}
+				}
+			]
+		}
+	]
+}

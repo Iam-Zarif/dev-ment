@@ -1,581 +1,581 @@
 {
-  "info": {
-    "_postman_id": "8f45a37d-evaluation-devment-final",
-    "name": "Dev-ment - Evaluation APIs",
-    "description": "Recruiter evaluation, manual scoring, MCQ auto scoring, finalization, result release and candidate result.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5001/api/v1"
-    },
-    {
-      "key": "recruiterToken",
-      "value": ""
-    },
-    {
-      "key": "candidateToken",
-      "value": ""
-    },
-    {
-      "key": "assessmentId",
-      "value": ""
-    },
-    {
-      "key": "attemptId",
-      "value": ""
-    },
-    {
-      "key": "shortTextAssessmentQuestionId",
-      "value": ""
-    },
-    {
-      "key": "longTextAssessmentQuestionId",
-      "value": ""
-    },
-    {
-      "key": "codingAssessmentQuestionId",
-      "value": ""
-    },
-    {
-      "key": "shortTextScore",
-      "value": "1"
-    },
-    {
-      "key": "longTextScore",
-      "value": "1"
-    },
-    {
-      "key": "codingScore",
-      "value": "1"
-    }
-  ],
-  "item": [
-    {
-      "name": "01 - Get Submitted Attempts",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations?page=1&limit=20"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Evaluation list returned\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.items).to.be.an(\"array\");",
-              "  pm.expect(json.data.meta).to.be.an(\"object\");",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "02 - Filter Assessment Evaluations",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations?assessmentId={{assessmentId}}&page=1&limit=20"
-      }
-    },
-    {
-      "name": "03 - Get Evaluation Details",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Evaluation details returned\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.assessment.questions).to.be.an(\"array\");",
-              "});",
-              "",
-              "const questions = json.data.assessment.questions || [];",
-              "",
-              "const shortText = questions.find((item) => item.question?.type === \"SHORT_TEXT\");",
-              "if (shortText) {",
-              "  pm.collectionVariables.set(\"shortTextAssessmentQuestionId\", shortText.id);",
-              "  pm.collectionVariables.set(\"shortTextScore\", Math.min(1, Number(shortText.marks)));",
-              "}",
-              "",
-              "const longText = questions.find((item) => item.question?.type === \"LONG_TEXT\");",
-              "if (longText) {",
-              "  pm.collectionVariables.set(\"longTextAssessmentQuestionId\", longText.id);",
-              "  pm.collectionVariables.set(\"longTextScore\", Math.min(1, Number(longText.marks)));",
-              "}",
-              "",
-              "const coding = questions.find((item) => item.question?.type === \"CODING\");",
-              "if (coding) {",
-              "  pm.collectionVariables.set(\"codingAssessmentQuestionId\", coding.id);",
-              "  pm.collectionVariables.set(\"codingScore\", Math.min(1, Number(coding.marks)));",
-              "}"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "04 - Review Short Text",
-      "request": {
-        "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"manualScore\": {{shortTextScore}},\n  \"recruiterFeedback\": \"Good short answer.\"\n}"
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{shortTextAssessmentQuestionId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Manual score saved\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.manualScore).to.exist;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "05 - Review Long Text",
-      "request": {
-        "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"manualScore\": {{longTextScore}},\n  \"recruiterFeedback\": \"Good explanation.\"\n}"
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{longTextAssessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "06 - Review Coding Answer",
-      "request": {
-        "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"manualScore\": {{codingScore}},\n  \"recruiterFeedback\": \"Implementation is acceptable.\"\n}"
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{codingAssessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "07 - Evaluate Attempt",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/evaluate"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Attempt fully evaluated\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.evaluationStatus).to.eql(\"EVALUATED\");",
-              "  pm.expect(json.data.totalScore).to.exist;",
-              "  pm.expect(json.data.totalMarks).to.exist;",
-              "  pm.expect(json.data.percentage).to.exist;",
-              "  pm.expect(json.data.passed).to.be.a(\"boolean\");",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "08 - Finalize Evaluation",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"finalFeedback\": \"Thank you for completing the technical assessment.\"\n}"
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/finalize"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Evaluation finalized\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.evaluationStatus).to.eql(\"FINALIZED\");",
-              "  pm.expect(json.data.finalizedAt).to.exist;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "09 - Candidate Result Before Release Should Fail",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/results/me/{{attemptId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Unreleased result is hidden\", function () {",
-              "  pm.response.to.have.status(404);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "10 - Release Result",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/release"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Result released\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.evaluationStatus).to.eql(\"FINALIZED\");",
-              "  pm.expect(json.data.resultReleasedAt).to.exist;",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "11 - Candidate Get Released Result",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/results/me/{{attemptId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status is 200\", function () {",
-              "  pm.response.to.have.status(200);",
-              "});",
-              "",
-              "const json = pm.response.json();",
-              "",
-              "pm.test(\"Released result returned\", function () {",
-              "  pm.expect(json.success).to.eql(true);",
-              "  pm.expect(json.data.totalScore).to.exist;",
-              "  pm.expect(json.data.totalMarks).to.exist;",
-              "  pm.expect(json.data.percentage).to.exist;",
-              "  pm.expect(json.data.passed).to.be.a(\"boolean\");",
-              "  pm.expect(json.data.questions).to.be.an(\"array\");",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "12 - Release Same Result Again Should Fail",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/evaluations/{{attemptId}}/release"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Duplicate release rejected\", function () {",
-              "  pm.response.to.have.status(409);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Negative Tests",
-      "item": [
-        {
-          "name": "Candidate Cannot Access Recruiter Evaluation",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/evaluations/{{attemptId}}"
-          }
-        },
-        {
-          "name": "Manual Review MCQ Should Fail",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"manualScore\": 1\n}"
-            },
-            "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/MCQ_ASSESSMENT_QUESTION_UUID"
-          }
-        },
-        {
-          "name": "Invalid Score",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"manualScore\": -1\n}"
-            },
-            "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{shortTextAssessmentQuestionId}}"
-          }
-        },
-        {
-          "name": "Invalid Attempt ID",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/evaluations/not-a-uuid"
-          }
-        }
-      ]
-    }
-  ]
+	"info": {
+		"_postman_id": "8f45a37d-evaluation-devment-final",
+		"name": "Dev-ment - Evaluation APIs",
+		"description": "Recruiter evaluation, manual scoring, MCQ auto scoring, finalization, result release and candidate result.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5001/api/v1"
+		},
+		{
+			"key": "recruiterToken",
+			"value": ""
+		},
+		{
+			"key": "candidateToken",
+			"value": ""
+		},
+		{
+			"key": "assessmentId",
+			"value": ""
+		},
+		{
+			"key": "attemptId",
+			"value": ""
+		},
+		{
+			"key": "shortTextAssessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "longTextAssessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "codingAssessmentQuestionId",
+			"value": ""
+		},
+		{
+			"key": "shortTextScore",
+			"value": "1"
+		},
+		{
+			"key": "longTextScore",
+			"value": "1"
+		},
+		{
+			"key": "codingScore",
+			"value": "1"
+		}
+	],
+	"item": [
+		{
+			"name": "01 - Get Submitted Attempts",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations?page=1&limit=20"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Evaluation list returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.items).to.be.an(\"array\");",
+							"  pm.expect(json.data.meta).to.be.an(\"object\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "02 - Filter Assessment Evaluations",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations?assessmentId={{assessmentId}}&page=1&limit=20"
+			}
+		},
+		{
+			"name": "03 - Get Evaluation Details",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Evaluation details returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.assessment.questions).to.be.an(\"array\");",
+							"});",
+							"",
+							"const questions = json.data.assessment.questions || [];",
+							"",
+							"const shortText = questions.find((item) => item.question?.type === \"SHORT_TEXT\");",
+							"if (shortText) {",
+							"  pm.collectionVariables.set(\"shortTextAssessmentQuestionId\", shortText.id);",
+							"  pm.collectionVariables.set(\"shortTextScore\", Math.min(1, Number(shortText.marks)));",
+							"}",
+							"",
+							"const longText = questions.find((item) => item.question?.type === \"LONG_TEXT\");",
+							"if (longText) {",
+							"  pm.collectionVariables.set(\"longTextAssessmentQuestionId\", longText.id);",
+							"  pm.collectionVariables.set(\"longTextScore\", Math.min(1, Number(longText.marks)));",
+							"}",
+							"",
+							"const coding = questions.find((item) => item.question?.type === \"CODING\");",
+							"if (coding) {",
+							"  pm.collectionVariables.set(\"codingAssessmentQuestionId\", coding.id);",
+							"  pm.collectionVariables.set(\"codingScore\", Math.min(1, Number(coding.marks)));",
+							"}"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "04 - Review Short Text",
+			"request": {
+				"method": "PATCH",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"manualScore\": {{shortTextScore}},\n  \"recruiterFeedback\": \"Good short answer.\"\n}"
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{shortTextAssessmentQuestionId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Manual score saved\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.manualScore).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "05 - Review Long Text",
+			"request": {
+				"method": "PATCH",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"manualScore\": {{longTextScore}},\n  \"recruiterFeedback\": \"Good explanation.\"\n}"
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{longTextAssessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "06 - Review Coding Answer",
+			"request": {
+				"method": "PATCH",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"manualScore\": {{codingScore}},\n  \"recruiterFeedback\": \"Implementation is acceptable.\"\n}"
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{codingAssessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "07 - Evaluate Attempt",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/evaluate"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Attempt fully evaluated\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.evaluationStatus).to.eql(\"EVALUATED\");",
+							"  pm.expect(json.data.totalScore).to.exist;",
+							"  pm.expect(json.data.totalMarks).to.exist;",
+							"  pm.expect(json.data.percentage).to.exist;",
+							"  pm.expect(json.data.passed).to.be.a(\"boolean\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "08 - Finalize Evaluation",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"finalFeedback\": \"Thank you for completing the technical assessment.\"\n}"
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/finalize"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Evaluation finalized\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.evaluationStatus).to.eql(\"FINALIZED\");",
+							"  pm.expect(json.data.finalizedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "09 - Candidate Result Before Release Should Fail",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/results/me/{{attemptId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Unreleased result is hidden\", function () {",
+							"  pm.response.to.have.status(404);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "10 - Release Result",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/release"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Result released\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.evaluationStatus).to.eql(\"FINALIZED\");",
+							"  pm.expect(json.data.resultReleasedAt).to.exist;",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "11 - Candidate Get Released Result",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{candidateToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/results/me/{{attemptId}}"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status is 200\", function () {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"pm.test(\"Released result returned\", function () {",
+							"  pm.expect(json.success).to.eql(true);",
+							"  pm.expect(json.data.totalScore).to.exist;",
+							"  pm.expect(json.data.totalMarks).to.exist;",
+							"  pm.expect(json.data.percentage).to.exist;",
+							"  pm.expect(json.data.passed).to.be.a(\"boolean\");",
+							"  pm.expect(json.data.questions).to.be.an(\"array\");",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "12 - Release Same Result Again Should Fail",
+			"request": {
+				"method": "POST",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{recruiterToken}}",
+							"type": "string"
+						}
+					]
+				},
+				"url": "{{baseUrl}}/evaluations/{{attemptId}}/release"
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Duplicate release rejected\", function () {",
+							"  pm.response.to.have.status(409);",
+							"});"
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Negative Tests",
+			"item": [
+				{
+					"name": "Candidate Cannot Access Recruiter Evaluation",
+					"request": {
+						"method": "GET",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{candidateToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/evaluations/{{attemptId}}"
+					}
+				},
+				{
+					"name": "Manual Review MCQ Should Fail",
+					"request": {
+						"method": "PATCH",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{recruiterToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"manualScore\": 1\n}"
+						},
+						"url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/MCQ_ASSESSMENT_QUESTION_UUID"
+					}
+				},
+				{
+					"name": "Invalid Score",
+					"request": {
+						"method": "PATCH",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{recruiterToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"manualScore\": -1\n}"
+						},
+						"url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{shortTextAssessmentQuestionId}}"
+					}
+				},
+				{
+					"name": "Invalid Attempt ID",
+					"request": {
+						"method": "GET",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{recruiterToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"url": "{{baseUrl}}/evaluations/not-a-uuid"
+					}
+				}
+			]
+		}
+	]
 }

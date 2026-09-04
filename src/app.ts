@@ -4,6 +4,7 @@ import cors from "cors";
 import express, { type Request, type Response } from "express";
 import hpp from "hpp";
 import apiRouter from "./app/routes/index.js";
+import { paymentWebhookRouter } from "./app/routes/payment.routes.js";
 import { config } from "./config/index.js";
 import { prisma } from "./lib/prisma/index.js";
 import { connectRedis, redisClient } from "./lib/redis/index.js";
@@ -24,14 +25,19 @@ app.use(
 	}),
 );
 
+app.use(cookieParser());
+
+app.use(`/api/${config.app.apiVersion}`, paymentWebhookRouter);
+
 app.use(hpp());
 app.use(compression());
-app.use(cookieParser());
+
 app.use(
 	express.json({
 		limit: "1mb",
 	}),
 );
+
 app.use(
 	express.urlencoded({
 		extended: true,
@@ -60,6 +66,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 
 	try {
 		await prisma.$queryRaw`SELECT 1`;
+
 		checks.database = "healthy";
 	} catch {
 		checks.database = "unhealthy";
