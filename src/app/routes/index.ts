@@ -1,4 +1,5 @@
 import { Router } from "express";
+import adminRouter from "./admin.routes.js";
 import applicationRouter from "./application.routes.js";
 import assessmentRouter from "./assessment.routes.js";
 import attemptRouter from "./attempt.routes.js";
@@ -18,5 +19,6 @@ router.use("/invitations", invitationRouter);
 router.use("/attempts", attemptRouter);
 router.use("/evaluations", evaluationRouter);
 router.use("/payments", paymentRouter);
+router.use("/admin", adminRouter);
 
 export default router;

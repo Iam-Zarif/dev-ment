@@ -41,14 +41,7 @@ export const seedPlans = async () => {
 			where: {
 				code: plan.code,
 			},
-			update: {
-				name: plan.name,
-				price: plan.price,
-				currency: plan.currency,
-				assessmentCredits: plan.assessmentCredits,
-				validityDays: plan.validityDays,
-				isActive: true,
-			},
+			update: {},
 			create: {
 				code: plan.code,
 				name: plan.name,
