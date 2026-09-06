@@ -7,6 +7,7 @@ import authRouter from "./auth.routes.js";
 import evaluationRouter from "./evaluation.routes.js";
 import invitationRouter from "./invitation.routes.js";
 import paymentRouter from "./payment.routes.js";
+import profileRouter from "./profile.routes.js";
 import questionRouter from "./question.routes.js";
 
 const router = Router();
@@ -19,6 +20,7 @@ router.use("/invitations", invitationRouter);
 router.use("/attempts", attemptRouter);
 router.use("/evaluations", evaluationRouter);
 router.use("/payments", paymentRouter);
+router.use("/profiles", profileRouter);
 router.use("/admin", adminRouter);
 
 export default router;

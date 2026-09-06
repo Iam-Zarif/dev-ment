@@ -2,6 +2,7 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
+import helmet from "helmet";
 import hpp from "hpp";
 import apiRouter from "./app/routes/index.js";
 import { paymentWebhookRouter } from "./app/routes/payment.routes.js";
@@ -17,10 +18,14 @@ const app = express();
 
 app.disable("x-powered-by");
 
+app.use(helmet());
+
 app.use(
 	cors({
 		origin:
-			config.cors.allowedOrigins.length > 0 ? config.cors.allowedOrigins : true,
+			config.cors.allowedOrigins.length > 0
+				? config.cors.allowedOrigins
+				: false,
 		credentials: true,
 	}),
 );
@@ -30,6 +35,7 @@ app.use(cookieParser());
 app.use(`/api/${config.app.apiVersion}`, paymentWebhookRouter);
 
 app.use(hpp());
+
 app.use(compression());
 
 app.use(

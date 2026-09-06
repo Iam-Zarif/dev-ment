@@ -1,0 +1,368 @@
+{
+  "info": {
+    "_postman_id": "3f7d85ac-devment-application-final",
+    "name": "Dev-ment - Application APIs",
+    "description": "Candidate application submission and recruiter review flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api/v1"
+    },
+    {
+      "key": "candidateToken",
+      "value": ""
+    },
+    {
+      "key": "recruiterToken",
+      "value": ""
+    },
+    {
+      "key": "assessmentId",
+      "value": ""
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    },
+    {
+      "key": "rejectApplicationId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Candidate Apply",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assessmentId\": \"{{assessmentId}}\",\n  \"coverNote\": \"I am interested in this assessment.\"\n}"
+        },
+        "url": "{{baseUrl}}/applications"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Application created\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.status).to.eql(\"APPLIED\");",
+              "  pm.expect(json.data.id).to.be.a(\"string\");",
+              "});",
+              "pm.collectionVariables.set(\"applicationId\", json.data.id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Candidate Get My Applications",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/me?page=1&limit=20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Application list returned\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.items).to.be.an(\"array\");",
+              "  pm.expect(json.data.meta).to.be.an(\"object\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Candidate Filter My Applications",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/me?status=APPLIED&assessmentId={{assessmentId}}&page=1&limit=20"
+      }
+    },
+    {
+      "name": "04 - Candidate Get My Application",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/me/{{applicationId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Correct application returned\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.id).to.eql(pm.collectionVariables.get(\"applicationId\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Recruiter Get Applications",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/recruiter?assessmentId={{assessmentId}}&page=1&limit=20"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Recruiter application list returned\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.items).to.be.an(\"array\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Recruiter Get Application Details",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/recruiter/{{applicationId}}"
+      }
+    },
+    {
+      "name": "07 - Recruiter Shortlist",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/applications/{{applicationId}}/shortlist"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test(\"Application shortlisted\", function () {",
+              "  pm.expect(json.success).to.eql(true);",
+              "  pm.expect(json.data.status).to.eql(\"SHORTLISTED\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Duplicate Apply Should Fail",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assessmentId\": \"{{assessmentId}}\",\n  \"coverNote\": \"Duplicate application test.\"\n}"
+        },
+        "url": "{{baseUrl}}/applications"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Duplicate application rejected\", function () { pm.response.to.have.status(409); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "Candidate Cannot Access Recruiter List",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/recruiter"
+          }
+        },
+        {
+          "name": "Recruiter Cannot Access Candidate Mine",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/me"
+          }
+        },
+        {
+          "name": "Invalid Application UUID",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/me/not-a-uuid"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Optional Reject Flow",
+      "item": [
+        {
+          "name": "Reject Separate Application",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Not selected for this role.\"\n}"
+            },
+            "url": "{{baseUrl}}/applications/{{rejectApplicationId}}/reject"
+          }
+        }
+      ]
+    }
+  ]
+}
