@@ -2,7 +2,6 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Request, type Response } from "express";
-import helmet from "helmet";
 import hpp from "hpp";
 import apiRouter from "./app/routes/index.js";
 import { paymentWebhookRouter } from "./app/routes/payment.routes.js";
@@ -15,10 +14,8 @@ import {
 } from "./shared/middlewares/index.js";
 
 const app = express();
-
 app.disable("x-powered-by");
 
-app.use(helmet());
 
 app.use(
 	cors({
