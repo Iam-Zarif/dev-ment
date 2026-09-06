@@ -1,235 +1,74 @@
 {
   "info": {
-    "_postman_id": "4f4e4ad7-devment-admin-final",
+    "_postman_id": "devment-clean-admin",
     "name": "Dev-ment - Admin APIs",
-    "description": "Admin dashboard, users, companies, pricing plans, recruiter credits, payments and audit logs.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
+  },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5001/api/v1"
-    },
-    {
-      "key": "adminToken",
-      "value": ""
-    },
-    {
-      "key": "candidateToken",
-      "value": ""
-    },
-    {
-      "key": "recruiterToken",
-      "value": ""
-    },
-    {
-      "key": "targetUserId",
-      "value": ""
-    },
-    {
-      "key": "deleteUserId",
-      "value": ""
-    },
-    {
-      "key": "companyId",
-      "value": ""
-    },
-    {
-      "key": "recruiterProfileId",
-      "value": ""
-    },
-    {
-      "key": "planId",
-      "value": ""
-    }
+    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
+    { "key": "adminToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "companyId", "value": "" },
+    { "key": "planId", "value": "" },
+    { "key": "recruiterProfileId", "value": "" }
   ],
   "item": [
     {
-      "name": "01 - Dashboard",
+      "name": "Get Dashboard",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
         "url": "{{baseUrl}}/admin/dashboard"
       }
     },
     {
-      "name": "02 - List Users",
+      "name": "Get Users",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/admin/users?page=1&limit=50"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const json = pm.response.json();",
-              "const candidate = json.data.items.find((item) => item.role === \"CANDIDATE\" && item.status !== \"DELETED\");",
-              "if (candidate) pm.collectionVariables.set(\"targetUserId\", candidate.id);",
-              "const recruiter = json.data.items.find((item) => item.role === \"RECRUITER\" && item.recruiterProfile);",
-              "if (recruiter) {",
-              "  pm.collectionVariables.set(\"recruiterProfileId\", recruiter.recruiterProfile.id);",
-              "  if (recruiter.recruiterProfile.company) pm.collectionVariables.set(\"companyId\", recruiter.recruiterProfile.company.id);",
-              "}"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "03 - Get User Details",
-      "request": {
-        "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/admin/users/{{targetUserId}}"
+        "url": "{{baseUrl}}/admin/users?page=1&limit=20"
       }
     },
     {
-      "name": "04 - Block User",
+      "name": "Get User",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/admin/users/{{userId}}"
+      }
+    },
+    {
+      "name": "Update User Status",
       "request": {
         "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"status\": \"BLOCKED\"\n}"
         },
-        "url": "{{baseUrl}}/admin/users/{{targetUserId}}/status"
+        "url": "{{baseUrl}}/admin/users/{{userId}}/status"
       }
     },
     {
-      "name": "05 - Activate User",
+      "name": "Delete User",
       "request": {
-        "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"ACTIVE\"\n}"
-        },
-        "url": "{{baseUrl}}/admin/users/{{targetUserId}}/status"
+        "method": "DELETE",
+        "url": "{{baseUrl}}/admin/users/{{userId}}"
       }
     },
     {
-      "name": "06 - List Companies",
+      "name": "Get Companies",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/admin/companies?page=1&limit=50"
+        "url": "{{baseUrl}}/admin/companies?page=1&limit=20"
       }
     },
     {
-      "name": "07 - Unverify Company",
+      "name": "Update Company Verification",
       "request": {
         "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"isVerified\": false\n}"
-        },
-        "url": "{{baseUrl}}/admin/companies/{{companyId}}/verification"
-      }
-    },
-    {
-      "name": "08 - Verify Company",
-      "request": {
-        "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"isVerified\": true\n}"
@@ -238,216 +77,56 @@
       }
     },
     {
-      "name": "09 - List Pricing Plans",
+      "name": "Get Pricing Plans",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
         "url": "{{baseUrl}}/admin/pricing-plans"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const json = pm.response.json();",
-              "const pro = json.data.find((plan) => plan.code === \"PRO\");",
-              "if (pro) pm.collectionVariables.set(\"planId\", pro.id);"
-            ]
-          }
-        }
-      ]
+      }
     },
     {
-      "name": "10 - Update PRO Plan",
+      "name": "Update Pricing Plan",
       "request": {
         "method": "PATCH",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Pro\"\n}"
+          "raw": "{\n  \"name\": \"Pro\",\n  \"price\": 5,\n  \"assessmentCredits\": 4,\n  \"validityDays\": 45,\n  \"isActive\": true\n}"
         },
         "url": "{{baseUrl}}/admin/pricing-plans/{{planId}}"
       }
     },
     {
-      "name": "11 - Get Recruiter Credits",
+      "name": "Get Recruiter Credits",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
         "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
       }
     },
     {
-      "name": "12 - Grant Recruiter Admin Credit",
+      "name": "Grant Recruiter Credits",
       "request": {
         "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"credits\": 1,\n  \"validityDays\": 30,\n  \"reason\": \"Postman admin verification\"\n}"
+          "raw": "{\n  \"credits\": 2,\n  \"validityDays\": 30,\n  \"reason\": \"Manual admin credit\"\n}"
         },
         "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
       }
     },
     {
-      "name": "13 - List Payments",
+      "name": "Get Payments",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/admin/payments?page=1&limit=50"
+        "url": "{{baseUrl}}/admin/payments?page=1&limit=20"
       }
     },
     {
-      "name": "14 - Audit Logs",
+      "name": "Get Audit Logs",
       "request": {
         "method": "GET",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{adminToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=50"
+        "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20"
       }
-    },
-    {
-      "name": "Negative Tests",
-      "item": [
-        {
-          "name": "Candidate Cannot Access Admin",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/admin/dashboard"
-          }
-        },
-        {
-          "name": "Recruiter Cannot Access Admin",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/admin/users"
-          }
-        },
-        {
-          "name": "Invalid User UUID",
-          "request": {
-            "method": "GET",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/admin/users/not-a-uuid"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Optional Dangerous Operations",
-      "item": [
-        {
-          "name": "Soft Delete User",
-          "request": {
-            "method": "DELETE",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{adminToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "url": "{{baseUrl}}/admin/users/{{deleteUserId}}"
-          }
-        }
-      ]
     }
   ]
 }

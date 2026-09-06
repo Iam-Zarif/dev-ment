@@ -1,8 +1,7 @@
 {
   "info": {
-    "_postman_id": "78b229f0-devment-profile-final",
-    "name": "Dev-ment - Profile & Cloudinary APIs",
-    "description": "Candidate and recruiter profile updates plus signed direct Cloudinary upload signatures.",
+    "_postman_id": "devment-profile-final",
+    "name": "Dev-ment - Profile APIs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -17,27 +16,11 @@
     {
       "key": "recruiterToken",
       "value": ""
-    },
-    {
-      "key": "candidateProfileImageUrl",
-      "value": ""
-    },
-    {
-      "key": "candidateResumeUrl",
-      "value": ""
-    },
-    {
-      "key": "recruiterProfileImageUrl",
-      "value": ""
-    },
-    {
-      "key": "companyLogoUrl",
-      "value": ""
     }
   ],
   "item": [
     {
-      "name": "01 - Candidate Update Profile",
+      "name": "Update Candidate Profile",
       "request": {
         "method": "PATCH",
         "auth": {
@@ -58,67 +41,13 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"legalName\": \"Demo Candidate\",\n  \"headline\": \"Backend Developer\",\n  \"bio\": \"Candidate profile updated from Postman.\",\n  \"experienceYears\": 2.5,\n  \"skills\": [\"TypeScript\", \"Node.js\", \"PostgreSQL\"],\n  \"githubUrl\": \"https://github.com/example\"\n}"
+          "raw": "{\n  \"legalName\": \"Demo Candidate\",\n  \"headline\": \"Backend Developer\",\n  \"bio\": \"Backend focused developer\",\n  \"experienceYears\": 2.5,\n  \"skills\": [\"TypeScript\", \"Node.js\", \"PostgreSQL\"],\n  \"githubUrl\": \"https://github.com/example\"\n}"
         },
         "url": "{{baseUrl}}/profiles/candidate"
       }
     },
     {
-      "name": "02 - Candidate Profile Image Signature",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"assetType\": \"PROFILE_IMAGE\"\n}"
-        },
-        "url": "{{baseUrl}}/profiles/upload-signature"
-      }
-    },
-    {
-      "name": "03 - Candidate Resume Signature",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{candidateToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"assetType\": \"CANDIDATE_RESUME\"\n}"
-        },
-        "url": "{{baseUrl}}/profiles/upload-signature"
-      }
-    },
-    {
-      "name": "04 - Recruiter Update Profile",
+      "name": "Update Recruiter Profile",
       "request": {
         "method": "PATCH",
         "auth": {
@@ -145,7 +74,7 @@
       }
     },
     {
-      "name": "05 - Recruiter Profile Image Signature",
+      "name": "Create Upload Signature",
       "request": {
         "method": "POST",
         "auth": {
@@ -153,7 +82,7 @@
           "bearer": [
             {
               "key": "token",
-              "value": "{{recruiterToken}}",
+              "value": "{{candidateToken}}",
               "type": "string"
             }
           ]
@@ -170,259 +99,6 @@
         },
         "url": "{{baseUrl}}/profiles/upload-signature"
       }
-    },
-    {
-      "name": "06 - Company Logo Signature",
-      "request": {
-        "method": "POST",
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{recruiterToken}}",
-              "type": "string"
-            }
-          ]
-        },
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"assetType\": \"COMPANY_LOGO\"\n}"
-        },
-        "url": "{{baseUrl}}/profiles/upload-signature"
-      }
-    },
-    {
-      "name": "Optional Cloudinary URL Save",
-      "item": [
-        {
-          "name": "Save Candidate Profile Image URL",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"imageUrl\": \"{{candidateProfileImageUrl}}\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/candidate"
-          }
-        },
-        {
-          "name": "Save Candidate Resume URL",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"resumeUrl\": \"{{candidateResumeUrl}}\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/candidate"
-          }
-        },
-        {
-          "name": "Save Recruiter Profile Image URL",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"imageUrl\": \"{{recruiterProfileImageUrl}}\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/recruiter"
-          }
-        },
-        {
-          "name": "Save Company Logo URL",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"companyLogoUrl\": \"{{companyLogoUrl}}\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/recruiter"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Negative Tests",
-      "item": [
-        {
-          "name": "Candidate Cannot Update Recruiter Profile",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"jobTitle\": \"Invalid\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/recruiter"
-          }
-        },
-        {
-          "name": "Recruiter Cannot Upload Candidate Resume",
-          "request": {
-            "method": "POST",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{recruiterToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"assetType\": \"CANDIDATE_RESUME\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/upload-signature"
-          }
-        },
-        {
-          "name": "Candidate Cannot Upload Company Logo",
-          "request": {
-            "method": "POST",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"assetType\": \"COMPANY_LOGO\"\n}"
-            },
-            "url": "{{baseUrl}}/profiles/upload-signature"
-          }
-        },
-        {
-          "name": "Empty Candidate Update Should Fail",
-          "request": {
-            "method": "PATCH",
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{candidateToken}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{}"
-            },
-            "url": "{{baseUrl}}/profiles/candidate"
-          }
-        }
-      ]
     }
   ]
 }
