@@ -5,9 +5,9 @@
 	"main": "index.js",
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
-		"start": "tsx src/server.ts",
+		"build": "prisma generate && tsc -p tsconfig.json",
+		"start": "node dist/server.js",
 		"postinstall": "prisma generate",
-		"build": "prisma generate && tsc --noEmit",
 		"check": "biome check --write . && tsc --noEmit",
 		"format": "biome format --write .",
 		"lint": "biome lint .",
@@ -51,9 +51,10 @@
 		"pino-http": "^11.0.0",
 		"rate-limit-redis": "^6.0.1",
 		"redis": "^6.2.1",
-		"sanitize-html": "^2.17.7",
+		"sanitize-html": "2.17.5",
 		"stripe": "^22.6.1",
 		"tldts": "^7.4.11",
+		"vercel": "^59.11.7",
 		"zod": "^4.5.4"
 	},
 	"devDependencies": {

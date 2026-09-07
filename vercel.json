@@ -1,15 +1,15 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "dist/server.js",
-      "use": "@vercel/node"
+      "source": "/(.*)",
+      "destination": "/api/index"
     }
   ],
-  "routes": [
+  "crons": [
     {
-      "src": "/(.*)",
-      "dest": "dist/server.js"
+      "path": "/api/v1/cron/expire-plans",
+      "schedule": "0 0 * * *"
     }
   ]
 }
