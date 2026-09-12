@@ -1,70 +1,81 @@
 {
-  "info": {
-    "_postman_id": "devment-clean-question",
-    "name": "Dev-ment - Question APIs",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{recruiterToken}}", "type": "string" }]
-  },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
-    { "key": "recruiterToken", "value": "" },
-    { "key": "questionId", "value": "" }
-  ],
-  "item": [
-    {
-      "name": "Create Question",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Which one is a JavaScript library?</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\",\n  \"options\": [\n    {\n      \"optionHtml\": \"React\",\n      \"isCorrect\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"optionHtml\": \"PostgreSQL\",\n      \"isCorrect\": false,\n      \"sortOrder\": 2\n    }\n  ]\n}"
-        },
-        "url": "{{baseUrl}}/questions"
-      }
-    },
-    {
-      "name": "Get Questions",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/questions?page=1&limit=10"
-      }
-    },
-    {
-      "name": "Get Question",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/questions/{{questionId}}"
-      }
-    },
-    {
-      "name": "Update Question",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10\n}"
-        },
-        "url": "{{baseUrl}}/questions/{{questionId}}"
-      }
-    },
-    {
-      "name": "Duplicate Question",
-      "request": {
-        "method": "POST",
-        "url": "{{baseUrl}}/questions/{{questionId}}/duplicate"
-      }
-    },
-    {
-      "name": "Delete Question",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/questions/{{questionId}}"
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "devment-clean-question",
+		"name": "Dev-ment - Question APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{recruiterToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Create Question",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Which one is a JavaScript library?</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\",\n  \"options\": [\n    {\n      \"optionHtml\": \"React\",\n      \"isCorrect\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"optionHtml\": \"PostgreSQL\",\n      \"isCorrect\": false,\n      \"sortOrder\": 2\n    }\n  ]\n}"
+				},
+				"url": "{{baseUrl}}/questions"
+			}
+		},
+		{
+			"name": "Get Questions",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/questions?page=1&limit=10"
+			}
+		},
+		{
+			"name": "Get Question",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/questions/{{questionId}}"
+			}
+		},
+		{
+			"name": "Update Question",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10\n}"
+				},
+				"url": "{{baseUrl}}/questions/{{questionId}}"
+			}
+		},
+		{
+			"name": "Duplicate Question",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/questions/{{questionId}}/duplicate"
+			}
+		},
+		{
+			"name": "Delete Question",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/questions/{{questionId}}"
+			}
+		}
+	]
 }

@@ -1,138 +1,166 @@
 {
-  "info": {
-    "_postman_id": "devment-clean-assessment",
-    "name": "Dev-ment - Assessment APIs",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{recruiterToken}}", "type": "string" }]
-  },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
-    { "key": "recruiterToken", "value": "" },
-    { "key": "assessmentId", "value": "" },
-    { "key": "questionId", "value": "" },
-    { "key": "assessmentQuestionId", "value": "" }
-  ],
-  "item": [
-    {
-      "name": "Get Published Assessments",
-      "request": {
-        "method": "GET",
-        "auth": { "type": "noauth" },
-        "url": "{{baseUrl}}/assessments/published?page=1&limit=10"
-      }
-    },
-    {
-      "name": "Get Published Assessment",
-      "request": {
-        "method": "GET",
-        "auth": { "type": "noauth" },
-        "url": "{{baseUrl}}/assessments/published/{{assessmentId}}"
-      }
-    },
-    {
-      "name": "Create Assessment",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\"Node.js\", \"TypeScript\", \"PostgreSQL\"],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
-        },
-        "url": "{{baseUrl}}/assessments"
-      }
-    },
-    {
-      "name": "Get Assessments",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/assessments?page=1&limit=10"
-      }
-    },
-    {
-      "name": "Get Assessment",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
-      }
-    },
-    {
-      "name": "Update Assessment",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65\n}"
-        },
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
-      }
-    },
-    {
-      "name": "Delete Assessment",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
-      }
-    },
-    {
-      "name": "Attach Question",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
-        },
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions"
-      }
-    },
-    {
-      "name": "Update Assessment Question",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"marks\": 20\n}"
-        },
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "Remove Assessment Question",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "Reorder Assessment Questions",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"assessmentQuestionIds\": [\"{{assessmentQuestionId}}\"]\n}"
-        },
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order"
-      }
-    },
-    {
-      "name": "Publish Assessment",
-      "request": {
-        "method": "POST",
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/publish"
-      }
-    },
-    {
-      "name": "Close Assessment",
-      "request": {
-        "method": "POST",
-        "url": "{{baseUrl}}/assessments/{{assessmentId}}/close"
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "devment-clean-assessment",
+		"name": "Dev-ment - Assessment APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{recruiterToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Get Published Assessments",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "noauth"
+				},
+				"url": "{{baseUrl}}/assessments/published?page=1&limit=10"
+			}
+		},
+		{
+			"name": "Get Published Assessment",
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "noauth"
+				},
+				"url": "{{baseUrl}}/assessments/published/{{assessmentId}}"
+			}
+		},
+		{
+			"name": "Create Assessment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\"Node.js\", \"TypeScript\", \"PostgreSQL\"],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
+				},
+				"url": "{{baseUrl}}/assessments"
+			}
+		},
+		{
+			"name": "Get Assessments",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/assessments?page=1&limit=10"
+			}
+		},
+		{
+			"name": "Get Assessment",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
+			}
+		},
+		{
+			"name": "Update Assessment",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65\n}"
+				},
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
+			}
+		},
+		{
+			"name": "Delete Assessment",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
+			}
+		},
+		{
+			"name": "Attach Question",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
+				},
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions"
+			}
+		},
+		{
+			"name": "Update Assessment Question",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"marks\": 20\n}"
+				},
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "Remove Assessment Question",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "Reorder Assessment Questions",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"assessmentQuestionIds\": [\"{{assessmentQuestionId}}\"]\n}"
+				},
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order"
+			}
+		},
+		{
+			"name": "Publish Assessment",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/publish"
+			}
+		},
+		{
+			"name": "Close Assessment",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/assessments/{{assessmentId}}/close"
+			}
+		}
+	]
 }

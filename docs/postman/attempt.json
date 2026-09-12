@@ -1,71 +1,84 @@
 {
-  "info": {
-    "_postman_id": "devment-clean-attempt",
-    "name": "Dev-ment - Attempt APIs",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{candidateToken}}", "type": "string" }]
-  },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
-    { "key": "candidateToken", "value": "" },
-    { "key": "invitationId", "value": "" },
-    { "key": "attemptId", "value": "" },
-    { "key": "assessmentQuestionId", "value": "" },
-    { "key": "optionId", "value": "" }
-  ],
-  "item": [
-    {
-      "name": "Start Attempt",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/start"
-      }
-    },
-    {
-      "name": "Get Attempt",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/attempts/{{attemptId}}"
-      }
-    },
-    {
-      "name": "Save Answer",
-      "request": {
-        "method": "PUT",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"selectedOptionIds\": [\"{{optionId}}\"]\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}"
-      }
-    },
-    {
-      "name": "Record Proctor Event",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\"\n}"
-        },
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
-      }
-    },
-    {
-      "name": "Submit Attempt",
-      "request": {
-        "method": "POST",
-        "url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "devment-clean-attempt",
+		"name": "Dev-ment - Attempt APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{candidateToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Start Attempt",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/start"
+			}
+		},
+		{
+			"name": "Get Attempt",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/attempts/{{attemptId}}"
+			}
+		},
+		{
+			"name": "Save Answer",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"selectedOptionIds\": [\"{{optionId}}\"]\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}"
+			}
+		},
+		{
+			"name": "Record Proctor Event",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\"\n}"
+				},
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
+			}
+		},
+		{
+			"name": "Submit Attempt",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
+			}
+		}
+	]
 }

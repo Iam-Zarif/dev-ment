@@ -1,132 +1,150 @@
 {
-  "info": {
-    "_postman_id": "devment-clean-admin",
-    "name": "Dev-ment - Admin APIs",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }]
-  },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5001/api/v1" },
-    { "key": "adminToken", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "companyId", "value": "" },
-    { "key": "planId", "value": "" },
-    { "key": "recruiterProfileId", "value": "" }
-  ],
-  "item": [
-    {
-      "name": "Get Dashboard",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/dashboard"
-      }
-    },
-    {
-      "name": "Get Users",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/users?page=1&limit=20"
-      }
-    },
-    {
-      "name": "Get User",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/users/{{userId}}"
-      }
-    },
-    {
-      "name": "Update User Status",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"status\": \"BLOCKED\"\n}"
-        },
-        "url": "{{baseUrl}}/admin/users/{{userId}}/status"
-      }
-    },
-    {
-      "name": "Delete User",
-      "request": {
-        "method": "DELETE",
-        "url": "{{baseUrl}}/admin/users/{{userId}}"
-      }
-    },
-    {
-      "name": "Get Companies",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/companies?page=1&limit=20"
-      }
-    },
-    {
-      "name": "Update Company Verification",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"isVerified\": true\n}"
-        },
-        "url": "{{baseUrl}}/admin/companies/{{companyId}}/verification"
-      }
-    },
-    {
-      "name": "Get Pricing Plans",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/pricing-plans"
-      }
-    },
-    {
-      "name": "Update Pricing Plan",
-      "request": {
-        "method": "PATCH",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"name\": \"Pro\",\n  \"price\": 5,\n  \"assessmentCredits\": 4,\n  \"validityDays\": 45,\n  \"isActive\": true\n}"
-        },
-        "url": "{{baseUrl}}/admin/pricing-plans/{{planId}}"
-      }
-    },
-    {
-      "name": "Get Recruiter Credits",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
-      }
-    },
-    {
-      "name": "Grant Recruiter Credits",
-      "request": {
-        "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"credits\": 2,\n  \"validityDays\": 30,\n  \"reason\": \"Manual admin credit\"\n}"
-        },
-        "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
-      }
-    },
-    {
-      "name": "Get Payments",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/payments?page=1&limit=20"
-      }
-    },
-    {
-      "name": "Get Audit Logs",
-      "request": {
-        "method": "GET",
-        "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20"
-      }
-    }
-  ]
+	"info": {
+		"_postman_id": "devment-clean-admin",
+		"name": "Dev-ment - Admin APIs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{adminToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Get Dashboard",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/dashboard"
+			}
+		},
+		{
+			"name": "Get Users",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/users?page=1&limit=20"
+			}
+		},
+		{
+			"name": "Get User",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/users/{{userId}}"
+			}
+		},
+		{
+			"name": "Update User Status",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"status\": \"BLOCKED\"\n}"
+				},
+				"url": "{{baseUrl}}/admin/users/{{userId}}/status"
+			}
+		},
+		{
+			"name": "Delete User",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/admin/users/{{userId}}"
+			}
+		},
+		{
+			"name": "Get Companies",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/companies?page=1&limit=20"
+			}
+		},
+		{
+			"name": "Update Company Verification",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"isVerified\": true\n}"
+				},
+				"url": "{{baseUrl}}/admin/companies/{{companyId}}/verification"
+			}
+		},
+		{
+			"name": "Get Pricing Plans",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/pricing-plans"
+			}
+		},
+		{
+			"name": "Update Pricing Plan",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Pro\",\n  \"price\": 5,\n  \"assessmentCredits\": 4,\n  \"validityDays\": 45,\n  \"isActive\": true\n}"
+				},
+				"url": "{{baseUrl}}/admin/pricing-plans/{{planId}}"
+			}
+		},
+		{
+			"name": "Get Recruiter Credits",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
+			}
+		},
+		{
+			"name": "Grant Recruiter Credits",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"credits\": 2,\n  \"validityDays\": 30,\n  \"reason\": \"Manual admin credit\"\n}"
+				},
+				"url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
+			}
+		},
+		{
+			"name": "Get Payments",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/payments?page=1&limit=20"
+			}
+		},
+		{
+			"name": "Get Audit Logs",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20"
+			}
+		}
+	]
 }
