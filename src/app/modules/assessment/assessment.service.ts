@@ -1,7 +1,11 @@
 import type { Prisma } from "../../../generated/prisma/client.js";
-import { AssessmentStatus } from "../../../generated/prisma/enums.js";
+import {
+	AssessmentStatus,
+	DifficultyLevel,
+} from "../../../generated/prisma/enums.js";
 import { prisma } from "../../../lib/prisma/index.js";
 import { AppError } from "../../../shared/errors/index.js";
+import type { ApiErrorDetail } from "../../../shared/types/index.js";
 import {
 	calculatePagination,
 	createPaginationMeta,
@@ -20,9 +24,11 @@ import {
 import type {
 	AssessmentListQuery,
 	AttachAssessmentQuestionInput,
+	CreateAssessmentDraftInput,
 	CreateAssessmentInput,
 	PublishedAssessmentListQuery,
 	ReorderAssessmentQuestionsInput,
+	SyncAssessmentDraftInput,
 	UpdateAssessmentInput,
 	UpdateAssessmentQuestionInput,
 } from "./assessment.validation.js";
@@ -67,6 +73,145 @@ const ensureDraft = (assessment: LockedAssessment) => {
 		throw new AppError(409, "Only draft assessments can be modified");
 	}
 };
+
+type PublishReadinessAssessment = {
+	title: string;
+	jobRole: string;
+	durationMinutes: number;
+	passPercentage: number | { toNumber(): number };
+	suspiciousThreshold: number;
+	applicationDeadline: Date | null;
+	opensAt: Date | null;
+	closesAt: Date | null;
+	assessmentQuestions: Array<{
+		marks: number | { toNumber(): number };
+		question: {
+			companyId: string;
+			deletedAt: Date | null;
+		};
+	}>;
+};
+
+const numericValue = (value: number | { toNumber(): number }): number =>
+	typeof value === "number" ? value : value.toNumber();
+
+const getPublishValidationIssues = (
+	assessment: PublishReadinessAssessment,
+	companyId: string,
+): ApiErrorDetail[] => {
+	const issues: ApiErrorDetail[] = [];
+
+	if (assessment.title.trim().length < 2) {
+		issues.push({
+			path: "title",
+			code: "ASSESSMENT_TITLE_REQUIRED",
+			message: "Assessment title must be at least 2 characters",
+		});
+	}
+
+	if (assessment.jobRole.trim().length < 2) {
+		issues.push({
+			path: "jobRole",
+			code: "ASSESSMENT_JOB_ROLE_REQUIRED",
+			message: "Job role must be at least 2 characters",
+		});
+	}
+
+	if (assessment.durationMinutes <= 0) {
+		issues.push({
+			path: "durationMinutes",
+			code: "ASSESSMENT_DURATION_REQUIRED",
+			message: "Duration must be greater than zero",
+		});
+	}
+
+	const passPercentage = numericValue(assessment.passPercentage);
+	if (passPercentage <= 0 || passPercentage > 100) {
+		issues.push({
+			path: "passPercentage",
+			code: "ASSESSMENT_PASS_PERCENTAGE_INVALID",
+			message: "Pass percentage must be greater than zero and at most 100",
+		});
+	}
+
+	if (assessment.suspiciousThreshold <= 0) {
+		issues.push({
+			path: "suspiciousThreshold",
+			code: "ASSESSMENT_SUSPICIOUS_THRESHOLD_INVALID",
+			message: "Suspicious threshold must be greater than zero",
+		});
+	}
+
+	if (
+		assessment.opensAt &&
+		assessment.closesAt &&
+		assessment.opensAt >= assessment.closesAt
+	) {
+		issues.push({
+			path: "closesAt",
+			code: "ASSESSMENT_SCHEDULE_INVALID",
+			message: "closesAt must be after opensAt",
+		});
+	}
+
+	if (
+		assessment.applicationDeadline &&
+		assessment.closesAt &&
+		assessment.applicationDeadline > assessment.closesAt
+	) {
+		issues.push({
+			path: "applicationDeadline",
+			code: "ASSESSMENT_APPLICATION_DEADLINE_INVALID",
+			message: "Application deadline cannot be after assessment closing time",
+		});
+	}
+
+	if (assessment.assessmentQuestions.length === 0) {
+		issues.push({
+			path: "assessmentQuestions",
+			code: "ASSESSMENT_QUESTION_REQUIRED",
+			message: "Assessment must contain at least one question before publishing",
+		});
+	} else {
+		const invalidQuestionIndex = assessment.assessmentQuestions.findIndex(
+			(item) =>
+				item.question.deletedAt !== null ||
+				item.question.companyId !== companyId ||
+				numericValue(item.marks) <= 0,
+		);
+
+		if (invalidQuestionIndex >= 0) {
+			issues.push({
+				path: `assessmentQuestions.${invalidQuestionIndex}`,
+				code: "ASSESSMENT_QUESTION_INVALID",
+				message: "Assessment contains an invalid or unavailable question",
+			});
+		}
+	}
+
+	return issues;
+};
+
+const createPublishReadiness = (
+	assessment: PublishReadinessAssessment,
+	companyId: string,
+) => {
+	const issues = getPublishValidationIssues(assessment, companyId);
+
+	return {
+		canPublish: issues.length === 0,
+		issues,
+	};
+};
+
+const createSaveState = (
+	savedAt: Date,
+	mode: "AUTO" | "MANUAL",
+) => ({
+	state: "SAVED" as const,
+	mode,
+	savedAt,
+});
 
 const getOrderBy = (
 	query: AssessmentListQuery,
@@ -173,6 +318,103 @@ const create = async (
 		);
 
 		return assessment;
+	});
+};
+
+const createDraft = async (
+	userId: string,
+	input: CreateAssessmentDraftInput,
+	ipAddress?: string,
+) => {
+	return prisma.$transaction(async (tx) => {
+		const recruiter = await getRecruiterContext(userId, tx);
+
+		const assessment = await tx.assessment.create({
+			data: {
+				recruiter: {
+					connect: {
+						id: recruiter.recruiterId,
+					},
+				},
+				company: {
+					connect: {
+						id: recruiter.companyId,
+					},
+				},
+				title: input.title ?? "",
+				jobRole: input.jobRole ?? "",
+				descriptionHtml:
+					sanitizeOptionalAssessmentHtml(input.descriptionHtml) ?? null,
+				instructionsHtml:
+					sanitizeOptionalAssessmentHtml(input.instructionsHtml) ?? null,
+				skills: input.skills ?? [],
+				difficulty: input.difficulty ?? DifficultyLevel.INTERMEDIATE,
+				status: AssessmentStatus.DRAFT,
+				applicationDeadline: input.applicationDeadline ?? null,
+				opensAt: input.opensAt ?? null,
+				closesAt: input.closesAt ?? null,
+				durationMinutes: input.durationMinutes ?? 0,
+				passPercentage: input.passPercentage ?? 50,
+				suspiciousThreshold: input.suspiciousThreshold ?? 3,
+			},
+			select: {
+				id: true,
+				title: true,
+				jobRole: true,
+				descriptionHtml: true,
+				instructionsHtml: true,
+				skills: true,
+				difficulty: true,
+				status: true,
+				durationMinutes: true,
+				passPercentage: true,
+				suspiciousThreshold: true,
+				applicationDeadline: true,
+				opensAt: true,
+				closesAt: true,
+				createdAt: true,
+				updatedAt: true,
+				assessmentQuestions: {
+					select: {
+						marks: true,
+						question: {
+							select: {
+								companyId: true,
+								deletedAt: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		await auditService.create(
+			{
+				actorUserId: userId,
+				action: AUDIT_ACTIONS.ASSESSMENT_CREATED,
+				entityType: AUDIT_ENTITY_TYPES.ASSESSMENT,
+				entityId: assessment.id,
+				metadata: {
+					title: assessment.title,
+					draft: true,
+				},
+				...(ipAddress
+					? {
+							ipAddress,
+						}
+					: {}),
+			},
+			tx,
+		);
+
+		return {
+			...assessment,
+			saveState: createSaveState(assessment.updatedAt, "AUTO"),
+			publishReadiness: createPublishReadiness(
+				assessment,
+				recruiter.companyId,
+			),
+		};
 	});
 };
 
@@ -319,6 +561,10 @@ const getById = async (userId: string, assessmentId: string) => {
 	return {
 		...assessment,
 		totalMarks,
+		publishReadiness:
+			assessment.status === AssessmentStatus.DRAFT
+				? createPublishReadiness(assessment, recruiter.companyId)
+				: null,
 	};
 };
 
@@ -437,6 +683,120 @@ const update = async (
 		);
 
 		return assessment;
+	});
+};
+
+const syncDraft = async (
+	userId: string,
+	assessmentId: string,
+	input: SyncAssessmentDraftInput,
+	ipAddress?: string,
+) => {
+	return prisma.$transaction(async (tx) => {
+		const recruiter = await getRecruiterContext(userId, tx);
+		const locked = await lockOwnedAssessment(tx, recruiter, assessmentId);
+
+		ensureDraft(locked);
+
+		const data: Prisma.AssessmentUpdateInput = {
+			updatedAt: new Date(),
+		};
+
+		if (input.title !== undefined) data.title = input.title;
+		if (input.jobRole !== undefined) data.jobRole = input.jobRole;
+		if (input.descriptionHtml !== undefined) {
+			data.descriptionHtml =
+				sanitizeOptionalAssessmentHtml(input.descriptionHtml) ?? null;
+		}
+		if (input.instructionsHtml !== undefined) {
+			data.instructionsHtml =
+				sanitizeOptionalAssessmentHtml(input.instructionsHtml) ?? null;
+		}
+		if (input.skills !== undefined) data.skills = input.skills;
+		if (input.difficulty !== undefined) data.difficulty = input.difficulty;
+		if (input.applicationDeadline !== undefined) {
+			data.applicationDeadline = input.applicationDeadline;
+		}
+		if (input.opensAt !== undefined) data.opensAt = input.opensAt;
+		if (input.closesAt !== undefined) data.closesAt = input.closesAt;
+		if (input.durationMinutes !== undefined) {
+			data.durationMinutes = input.durationMinutes;
+		}
+		if (input.passPercentage !== undefined) {
+			data.passPercentage = input.passPercentage;
+		}
+		if (input.suspiciousThreshold !== undefined) {
+			data.suspiciousThreshold = input.suspiciousThreshold;
+		}
+
+		const assessment = await tx.assessment.update({
+			where: {
+				id: assessmentId,
+			},
+			data,
+			select: {
+				id: true,
+				title: true,
+				jobRole: true,
+				descriptionHtml: true,
+				instructionsHtml: true,
+				skills: true,
+				difficulty: true,
+				status: true,
+				durationMinutes: true,
+				passPercentage: true,
+				suspiciousThreshold: true,
+				applicationDeadline: true,
+				opensAt: true,
+				closesAt: true,
+				updatedAt: true,
+				assessmentQuestions: {
+					select: {
+						marks: true,
+						question: {
+							select: {
+								companyId: true,
+								deletedAt: true,
+							},
+						},
+					},
+				},
+			},
+		});
+
+		if (input.saveMode === "MANUAL") {
+			await auditService.create(
+				{
+					actorUserId: userId,
+					action: AUDIT_ACTIONS.ASSESSMENT_UPDATED,
+					entityType: AUDIT_ENTITY_TYPES.ASSESSMENT,
+					entityId: assessment.id,
+					metadata: {
+						fields: Object.keys(input).filter(
+							(field) => field !== "saveMode",
+						),
+						saveMode: input.saveMode,
+					},
+					...(ipAddress
+						? {
+								ipAddress,
+							}
+						: {}),
+				},
+				tx,
+			);
+		}
+
+		return {
+			id: assessment.id,
+			status: assessment.status,
+			updatedAt: assessment.updatedAt,
+			saveState: createSaveState(assessment.updatedAt, input.saveMode),
+			publishReadiness: createPublishReadiness(
+				assessment,
+				recruiter.companyId,
+			),
+		};
 	});
 };
 
@@ -840,6 +1200,11 @@ const publish = async (
 			},
 			select: {
 				id: true,
+				title: true,
+				jobRole: true,
+				durationMinutes: true,
+				passPercentage: true,
+				suspiciousThreshold: true,
 				applicationDeadline: true,
 				opensAt: true,
 				closesAt: true,
@@ -863,30 +1228,16 @@ const publish = async (
 			throw new AppError(404, "Assessment not found");
 		}
 
-		assertAssessmentSchedule({
-			applicationDeadline: assessment.applicationDeadline,
-			opensAt: assessment.opensAt,
-			closesAt: assessment.closesAt,
-		});
-
-		if (assessment.assessmentQuestions.length === 0) {
-			throw new AppError(
-				409,
-				"Assessment must contain at least one question before publishing",
-			);
-		}
-
-		const invalidQuestion = assessment.assessmentQuestions.find(
-			(item) =>
-				item.question.deletedAt ||
-				item.question.companyId !== recruiter.companyId ||
-				item.marks.toNumber() <= 0,
+		const publishReadiness = createPublishReadiness(
+			assessment,
+			recruiter.companyId,
 		);
 
-		if (invalidQuestion) {
+		if (!publishReadiness.canPublish) {
 			throw new AppError(
 				409,
-				"Assessment contains an invalid or unavailable question",
+				"Assessment is incomplete and cannot be published",
+				publishReadiness.issues,
 			);
 		}
 
@@ -1252,9 +1603,11 @@ const getPublishedById = async (assessmentId: string) => {
 
 export const assessmentService = {
 	create,
+	createDraft,
 	getAll,
 	getById,
 	update,
+	syncDraft,
 	addQuestion,
 	updateQuestion,
 	reorderQuestions,

@@ -95,6 +95,19 @@ Admin Password  : admin@mostofafatin.com
 
 ---
 
+## 📝 Assessment Draft Autosave API
+
+The assessment builder supports incomplete draft persistence so the frontend can autosave while a recruiter is still filling out the form.
+
+- `POST /api/v1/assessments/draft` — creates an incomplete draft; all assessment fields are optional.
+- `PATCH /api/v1/assessments/:id/draft` — partially syncs draft fields. Use `saveMode: "AUTO"` for debounced autosave and `saveMode: "MANUAL"` for the explicit **Save Draft** button.
+- `GET /api/v1/assessments/:id` — resumes the draft with questions and returns `publishReadiness`.
+- `POST /api/v1/assessments/:id/publish` — publishes only when strict completeness checks pass; otherwise returns structured validation errors.
+
+Autosave responses include `saveState` with `state`, `mode`, and `savedAt`, allowing the UI to show states such as **Saving...** and **Saved**. Automatic syncs do not create repetitive audit rows; manual saves are audited.
+
+---
+
 ## 🛠️ Tech Stack
 
 **Backend**

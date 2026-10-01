@@ -96,6 +96,51 @@ const suspiciousThresholdSchema = z
 		"Suspicious threshold is too large",
 	);
 
+const draftTitleSchema = z
+	.string()
+	.trim()
+	.max(ASSESSMENT_LIMITS.TITLE_MAX_LENGTH, "Assessment title is too long");
+
+const draftJobRoleSchema = z
+	.string()
+	.trim()
+	.max(ASSESSMENT_LIMITS.JOB_ROLE_MAX_LENGTH, "Job role is too long");
+
+const draftDurationSchema = z
+	.number()
+	.int()
+	.min(0, "Duration cannot be negative")
+	.max(ASSESSMENT_LIMITS.MAX_DURATION_MINUTES, "Duration is too large");
+
+const draftPassPercentageSchema = z
+	.number()
+	.min(0, "Pass percentage cannot be negative")
+	.max(100, "Pass percentage cannot exceed 100");
+
+const draftSuspiciousThresholdSchema = z
+	.number()
+	.int()
+	.min(0, "Suspicious threshold cannot be negative")
+	.max(
+		ASSESSMENT_LIMITS.MAX_SUSPICIOUS_THRESHOLD,
+		"Suspicious threshold is too large",
+	);
+
+const draftAssessmentFields = {
+	title: draftTitleSchema.optional(),
+	jobRole: draftJobRoleSchema.optional(),
+	descriptionHtml: optionalHtmlSchema,
+	instructionsHtml: optionalHtmlSchema,
+	skills: skillsSchema.optional(),
+	difficulty: difficultySchema.optional(),
+	applicationDeadline: optionalDateTimeSchema,
+	opensAt: optionalDateTimeSchema,
+	closesAt: optionalDateTimeSchema,
+	durationMinutes: draftDurationSchema.optional(),
+	passPercentage: draftPassPercentageSchema.optional(),
+	suspiciousThreshold: draftSuspiciousThresholdSchema.optional(),
+};
+
 const validateSchedule = (
 	data: {
 		applicationDeadline?: Date | null;
@@ -164,6 +209,17 @@ export const updateAssessmentSchema = z
 	})
 	.superRefine(validateSchedule);
 
+export const createAssessmentDraftSchema = z
+	.object(draftAssessmentFields)
+	.strict();
+
+export const syncAssessmentDraftSchema = z
+	.object({
+		...draftAssessmentFields,
+		saveMode: z.enum(["AUTO", "MANUAL"]).default("AUTO"),
+	})
+	.strict();
+
 export const assessmentListQuerySchema = z
 	.object({
 		page: z.coerce
@@ -229,7 +285,15 @@ export const assessmentQuestionParamsSchema = z.object({
 
 export type CreateAssessmentInput = z.infer<typeof createAssessmentSchema>;
 
+export type CreateAssessmentDraftInput = z.infer<
+	typeof createAssessmentDraftSchema
+>;
+
 export type UpdateAssessmentInput = z.infer<typeof updateAssessmentSchema>;
+
+export type SyncAssessmentDraftInput = z.infer<
+	typeof syncAssessmentDraftSchema
+>;
 
 export type AssessmentListQuery = z.infer<typeof assessmentListQuerySchema>;
 

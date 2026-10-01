@@ -7,9 +7,11 @@ import {
 	assessmentListQuerySchema,
 	assessmentQuestionParamsSchema,
 	attachAssessmentQuestionSchema,
+	createAssessmentDraftSchema,
 	createAssessmentSchema,
 	publishedAssessmentListQuerySchema,
 	reorderAssessmentQuestionsSchema,
+	syncAssessmentDraftSchema,
 	updateAssessmentQuestionSchema,
 	updateAssessmentSchema,
 } from "../modules/assessment/assessment.validation.js";
@@ -33,6 +35,14 @@ router.get(
 );
 
 router.use(auth(UserRole.RECRUITER));
+
+router.post(
+	"/draft",
+	validateRequest({
+		body: createAssessmentDraftSchema,
+	}),
+	assessmentController.createDraft,
+);
 
 router.post(
 	"/",
@@ -99,6 +109,15 @@ router.post(
 		params: idParamSchema,
 	}),
 	assessmentController.close,
+);
+
+router.patch(
+	"/:id/draft",
+	validateRequest({
+		params: idParamSchema,
+		body: syncAssessmentDraftSchema,
+	}),
+	assessmentController.syncDraft,
 );
 
 router.get(

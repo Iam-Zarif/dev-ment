@@ -5,9 +5,11 @@ import { assessmentService } from "./assessment.service.js";
 import type {
 	AssessmentListQuery,
 	AttachAssessmentQuestionInput,
+	CreateAssessmentDraftInput,
 	CreateAssessmentInput,
 	PublishedAssessmentListQuery,
 	ReorderAssessmentQuestionsInput,
+	SyncAssessmentDraftInput,
 	UpdateAssessmentInput,
 	UpdateAssessmentQuestionInput,
 } from "./assessment.validation.js";
@@ -42,6 +44,20 @@ const create = catchAsync(async (req, res) => {
 	return sendResponse(res, {
 		statusCode: 201,
 		message: "Assessment created successfully",
+		data,
+	});
+});
+
+const createDraft = catchAsync(async (req, res) => {
+	const data = await assessmentService.createDraft(
+		getUserId(req),
+		req.body as CreateAssessmentDraftInput,
+		req.ip,
+	);
+
+	return sendResponse(res, {
+		statusCode: 201,
+		message: "Assessment draft created successfully",
 		data,
 	});
 });
@@ -83,6 +99,24 @@ const update = catchAsync(async (req, res) => {
 	return sendResponse(res, {
 		statusCode: 200,
 		message: "Assessment updated successfully",
+		data,
+	});
+});
+
+const syncDraft = catchAsync(async (req, res) => {
+	const data = await assessmentService.syncDraft(
+		getUserId(req),
+		getParam(req, "id"),
+		req.body as SyncAssessmentDraftInput,
+		req.ip,
+	);
+
+	return sendResponse(res, {
+		statusCode: 200,
+		message:
+			(req.body as SyncAssessmentDraftInput).saveMode === "MANUAL"
+				? "Assessment draft saved successfully"
+				: "Assessment draft synced successfully",
 		data,
 	});
 });
@@ -214,9 +248,11 @@ const getPublishedById = catchAsync(async (req, res) => {
 
 export const assessmentController = {
 	create,
+	createDraft,
 	getAll,
 	getById,
 	update,
+	syncDraft,
 	addQuestion,
 	updateQuestion,
 	reorderQuestions,
