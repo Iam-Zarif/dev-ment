@@ -7,6 +7,11 @@ import {
 	sendResponse,
 	setRefreshTokenCookie,
 } from "../../../shared/utils/index.js";
+import {
+	clearPasswordResetCookie,
+	getPasswordResetCookie,
+	setPasswordResetCookie,
+} from "../../../shared/utils/passwordResetCookie.js";
 import type { AuthSession } from "./auth.interface.js";
 import { authService } from "./auth.service.js";
 import type {
@@ -18,6 +23,7 @@ import type {
 	ResendOtpInput,
 	ResetPasswordInput,
 	VerifyOtpInput,
+	VerifyPasswordResetOtpInput,
 } from "./auth.validation.js";
 
 const sendAuthSession = (
@@ -117,18 +123,37 @@ const logout = catchAsync(async (req, res) => {
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
-	await authService.forgotPassword(req.body as ForgotPasswordInput);
+	const data = await authService.forgotPassword(
+		req.body as ForgotPasswordInput,
+	);
+	clearPasswordResetCookie(res);
 
 	return sendResponse(res, {
 		statusCode: 200,
 		message:
-			"If an account exists with this email, a password reset email has been sent",
+			"If an account exists with this email, a verification code has been sent",
+		data,
+	});
+});
+
+const verifyPasswordResetOtp = catchAsync(async (req, res) => {
+	const session = await authService.verifyPasswordResetOtp(
+		req.body as VerifyPasswordResetOtpInput,
+	);
+	setPasswordResetCookie(res, session);
+	return sendResponse(res, {
+		statusCode: 200,
+		message: "Verification code accepted. Set your new password.",
 		data: null,
 	});
 });
 
 const resetPassword = catchAsync(async (req, res) => {
-	await authService.resetPassword(req.body as ResetPasswordInput);
+	await authService.resetPassword(
+		req.body as ResetPasswordInput,
+		getPasswordResetCookie(req),
+	);
+	clearPasswordResetCookie(res);
 
 	return sendResponse(res, {
 		statusCode: 200,
@@ -161,6 +186,7 @@ export const authController = {
 	refresh,
 	logout,
 	forgotPassword,
+	verifyPasswordResetOtp,
 	resetPassword,
 	getMe,
 };

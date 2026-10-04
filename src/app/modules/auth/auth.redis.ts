@@ -249,7 +249,84 @@ const deletePasswordResetToken = async (tokenHash: string) => {
 	await redisClient.del(getKey(AUTH_REDIS_PREFIXES.PASSWORD_RESET, tokenHash));
 };
 
+const getPasswordResetOtpKeys = (email: string) => [
+	getKey(AUTH_REDIS_PREFIXES.OTP, `PASSWORD_RESET:${email}`),
+	getKey(AUTH_REDIS_PREFIXES.OTP_COOLDOWN, `PASSWORD_RESET:${email}`),
+];
+
+const savePasswordResetOtp = async (
+	email: string,
+	userId: string | null,
+	otpHash: string,
+) => {
+	await ensureRedisConnection();
+	// Reserve the cooldown and replace the code atomically, including for unknown emails.
+	const saved = await redisClient.eval(
+		`
+  if redis.call('EXISTS', KEYS[2]) == 1 then return 0 end
+  redis.call('SET', KEYS[2], '1', 'EX', ARGV[4])
+  redis.call('DEL', KEYS[1])
+  redis.call('HSET', KEYS[1], 'hash', ARGV[1], 'userId', ARGV[2], 'attempts', '0')
+  redis.call('EXPIRE', KEYS[1], ARGV[3])
+  return 1
+ `,
+		{
+			keys: getPasswordResetOtpKeys(email),
+			arguments: [
+				otpHash,
+				userId ?? "",
+				String(config.otp.expiresInSeconds),
+				String(config.otp.resendCooldownSeconds),
+			],
+		},
+	);
+	return saved === 1;
+};
+
+const deletePasswordResetOtp = async (email: string, otpHash: string) => {
+	await ensureRedisConnection();
+	await redisClient.eval(
+		`
+  if redis.call('HGET', KEYS[1], 'hash') == ARGV[1] then
+   redis.call('DEL', KEYS[1], KEYS[2])
+  end
+  return 1
+ `,
+		{ keys: getPasswordResetOtpKeys(email), arguments: [otpHash] },
+	);
+};
+
+const consumePasswordResetOtp = async (email: string, otpHash: string) => {
+	await ensureRedisConnection();
+	// Check attempts and consume a matching code in one operation to prevent replay.
+	const result = await redisClient.eval(
+		`
+  if redis.call('EXISTS', KEYS[1]) == 0 then return {'EXPIRED', ''} end
+  local attempts = redis.call('HINCRBY', KEYS[1], 'attempts', 1)
+  local userId = redis.call('HGET', KEYS[1], 'userId')
+  if redis.call('HGET', KEYS[1], 'hash') ~= ARGV[1] or userId == '' then
+   if attempts >= tonumber(ARGV[2]) then
+    redis.call('DEL', KEYS[1])
+    return {'LIMIT', ''}
+   end
+   return {'INVALID', ''}
+  end
+  redis.call('DEL', KEYS[1])
+  return {'VERIFIED', userId}
+ `,
+		{
+			keys: getPasswordResetOtpKeys(email),
+			arguments: [otpHash, String(config.otp.maxAttempts)],
+		},
+	);
+	const [status, userId] = result as [string, string];
+	return { status, userId };
+};
+
 export const authRedis = {
+	savePasswordResetOtp,
+	deletePasswordResetOtp,
+	consumePasswordResetOtp,
 	savePendingRegistration,
 	getPendingRegistration,
 	hasOtpCooldown,

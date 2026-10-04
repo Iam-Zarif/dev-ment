@@ -9,7 +9,7 @@ const escapeHtml = (value: string): string => {
 
 type PasswordResetTemplateInput = {
 	name: string;
-	token: string;
+	otp: string;
 	expiresInMinutes: number;
 };
 
@@ -17,18 +17,18 @@ export const createPasswordResetTemplate = (
 	input: PasswordResetTemplateInput,
 ) => {
 	const name = escapeHtml(input.name);
-	const token = escapeHtml(input.token);
+	const otp = escapeHtml(input.otp);
 
 	return {
 		subject: "Reset your Dev-ment password",
-		text: `Hello ${input.name}, your password reset token is ${input.token}. It expires in ${input.expiresInMinutes} minutes.`,
+		text: `Hello ${input.name}, your password reset code is ${input.otp}. It expires in ${input.expiresInMinutes} minutes.`,
 		html: `
 			<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
 				<h2>Dev-ment</h2>
 				<p>Hello ${name},</p>
-				<p>Use the token below to reset your password.</p>
-				<div style="word-break:break-all;font-weight:700;margin:24px 0">${token}</div>
-				<p>This token expires in ${input.expiresInMinutes} minutes.</p>
+				<p>Use the 6-digit code below to reset your password.</p>
+				<div style="font-size:32px;font-weight:700;letter-spacing:8px;margin:24px 0">${otp}</div>
+				<p>This code expires in ${input.expiresInMinutes} minutes.</p>
 				<p>If you did not request a password reset, you can ignore this email.</p>
 			</div>
 		`,

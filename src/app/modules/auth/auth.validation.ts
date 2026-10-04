@@ -101,7 +101,6 @@ export const forgotPasswordSchema = z
 
 export const resetPasswordSchema = z
 	.object({
-		token: z.string().trim().min(32, "Password reset token is invalid"),
 		password: passwordSchema,
 		confirmPassword: passwordSchema,
 	})
@@ -126,3 +125,13 @@ export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const verifyPasswordResetOtpSchema = z
+	.object({
+		email: emailSchema,
+		otp: otpSchema,
+	})
+	.strict();
+export type VerifyPasswordResetOtpInput = z.infer<
+	typeof verifyPasswordResetOtpSchema
+>;

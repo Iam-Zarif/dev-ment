@@ -45,6 +45,7 @@ import type {
 	ResendOtpInput,
 	ResetPasswordInput,
 	VerifyOtpInput,
+	VerifyPasswordResetOtpInput,
 } from "./auth.validation.js";
 
 type UserForAuth = {
@@ -817,54 +818,71 @@ const logout = async (refreshToken: string, authenticatedUserId: string) => {
 
 const forgotPassword = async (input: ForgotPasswordInput) => {
 	const email = normalizeEmail(input.email);
-
 	const user = await prisma.user.findUnique({
-		where: {
+		where: { email },
+		select: { id: true, legalName: true, status: true, deletedAt: true },
+	});
+	const activeUser =
+		user && !user.deletedAt && user.status === UserStatus.ACTIVE ? user : null;
+	const otp = generateOtp();
+	const otpHash = hashToken(otp);
+	if (
+		!(await authRedis.savePasswordResetOtp(
 			email,
-		},
-		select: {
-			id: true,
-			legalName: true,
-			status: true,
-			deletedAt: true,
-		},
-	});
-
-	if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE) {
-		return;
+			activeUser?.id ?? null,
+			otpHash,
+		))
+	) {
+		throw new AppError(
+			429,
+			"Please wait before requesting another verification code",
+		);
 	}
-
-	const resetToken = generateSecureToken(32);
-
-	const resetTokenHash = hashToken(resetToken);
-
-	await authRedis.savePasswordResetToken(resetTokenHash, user.id);
-
-	const template = createPasswordResetTemplate({
-		name: user.legalName,
-		token: resetToken,
-		expiresInMinutes: AUTH_CONSTANTS.PASSWORD_RESET_TTL_SECONDS / 60,
-	});
-
-	try {
-		await sendEmail({
-			to: email,
-			...template,
+	if (activeUser) {
+		const template = createPasswordResetTemplate({
+			name: activeUser.legalName,
+			otp,
+			expiresInMinutes: Math.ceil(config.otp.expiresInSeconds / 60),
 		});
-	} catch (error) {
-		await authRedis.deletePasswordResetToken(resetTokenHash);
-
-		throw error;
+		try {
+			await sendEmail({ to: email, ...template });
+		} catch (error) {
+			await authRedis.deletePasswordResetOtp(email, otpHash);
+			throw error;
+		}
 	}
+	return { email, expiresInSeconds: config.otp.expiresInSeconds };
 };
 
-const resetPassword = async (input: ResetPasswordInput) => {
-	const tokenHash = hashToken(input.token);
+const verifyPasswordResetOtp = async (input: VerifyPasswordResetOtpInput) => {
+	const result = await authRedis.consumePasswordResetOtp(
+		normalizeEmail(input.email),
+		hashToken(input.otp),
+	);
+	if (result.status === "LIMIT") {
+		throw new AppError(
+			429,
+			"Too many verification attempts. Request a new code.",
+		);
+	}
+	if (result.status !== "VERIFIED" || !result.userId) {
+		throw new AppError(
+			400,
+			"Verification code is invalid or expired. Request a new code.",
+		);
+	}
+	const session = generateSecureToken(32);
+	await authRedis.savePasswordResetToken(hashToken(session), result.userId);
+	return session;
+};
 
-	const userId = await authRedis.consumePasswordResetToken(tokenHash);
-
+const resetPassword = async (input: ResetPasswordInput, session: string) => {
+	const userId = await authRedis.consumePasswordResetToken(hashToken(session));
 	if (!userId) {
-		throw new AppError(400, "Password reset token is invalid or expired");
+		throw new AppError(
+			400,
+			"Password reset session expired. Verify a new code.",
+		);
 	}
 
 	const user = await prisma.user.findUnique({
@@ -937,6 +955,7 @@ export const authService = {
 	refresh,
 	logout,
 	forgotPassword,
+	verifyPasswordResetOtp,
 	resetPassword,
 	getMe,
 };

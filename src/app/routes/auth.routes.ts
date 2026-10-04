@@ -16,6 +16,7 @@ import {
 	resendOtpSchema,
 	resetPasswordSchema,
 	verifyOtpSchema,
+	verifyPasswordResetOtpSchema,
 } from "../modules/auth/auth.validation.js";
 
 const router = Router();
@@ -85,6 +86,13 @@ router.post(
 		body: forgotPasswordSchema,
 	}),
 	authController.forgotPassword,
+);
+
+router.post(
+	"/verify-password-reset-otp",
+	authRateLimiter,
+	validateRequest({ body: verifyPasswordResetOtpSchema }),
+	authController.verifyPasswordResetOtp,
 );
 
 router.post(
