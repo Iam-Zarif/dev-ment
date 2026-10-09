@@ -772,6 +772,22 @@ const googleLogin = async (input: GoogleLoginInput): Promise<AuthSession> => {
 	return createAuthSession(user);
 };
 
+const getSession = async (refreshToken: string) => {
+	const payload = getVerifiedRefreshPayload(refreshToken);
+	const owner = await authRedis.getRefreshSessionOwner(payload.sessionId);
+	if (!owner || owner !== payload.userId) {
+		throw new AppError(401, "Refresh session is invalid or expired");
+	}
+	const user = await prisma.user.findUnique({
+		where: { id: payload.userId },
+		select: { id: true, role: true, status: true, deletedAt: true },
+	});
+	if (!user || user.deletedAt || user.status !== UserStatus.ACTIVE) {
+		throw new AppError(401, "User account is unavailable");
+	}
+	return { userId: user.id, role: user.role };
+};
+
 const refresh = async (refreshToken: string): Promise<AuthSession> => {
 	const payload = getVerifiedRefreshPayload(refreshToken);
 
@@ -953,6 +969,7 @@ export const authService = {
 	login,
 	googleLogin,
 	refresh,
+	getSession,
 	logout,
 	forgotPassword,
 	verifyPasswordResetOtp,

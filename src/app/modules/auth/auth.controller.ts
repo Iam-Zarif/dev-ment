@@ -96,6 +96,16 @@ const googleLogin = catchAsync(async (req, res) => {
 	return sendAuthSession(res, session, 200, "Google authentication successful");
 });
 
+const getSession = catchAsync(async (req, res) => {
+	const data = await authService.getSession(getRefreshTokenCookie(req));
+	res.setHeader("Cache-Control", "no-store");
+	return sendResponse(res, {
+		statusCode: 200,
+		message: "Session verified",
+		data,
+	});
+});
+
 const refresh = catchAsync(async (req, res) => {
 	const refreshToken = getRefreshTokenCookie(req);
 
@@ -184,6 +194,7 @@ export const authController = {
 	login,
 	googleLogin,
 	refresh,
+	getSession,
 	logout,
 	forgotPassword,
 	verifyPasswordResetOtp,

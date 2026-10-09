@@ -171,6 +171,15 @@ const saveRefreshSession = async (
 	await redisClient.expire(userKey, expiresInSeconds);
 };
 
+const getRefreshSessionOwner = async (
+	sessionId: string,
+): Promise<string | null> => {
+	await ensureRedisConnection();
+	return redisClient.get(
+		getKey(AUTH_REDIS_PREFIXES.REFRESH_SESSION, sessionId),
+	);
+};
+
 const consumeRefreshSession = async (
 	sessionId: string,
 ): Promise<string | null> => {
@@ -336,6 +345,7 @@ export const authRedis = {
 	clearOtpState,
 	clearRegistrationState,
 	saveRefreshSession,
+	getRefreshSessionOwner,
 	consumeRefreshSession,
 	revokeRefreshSession,
 	revokeAllRefreshSessions,

@@ -75,6 +75,8 @@ router.post(
 	authController.googleLogin,
 );
 
+router.get("/session", authController.getSession);
+
 router.post("/refresh", authRateLimiter, authController.refresh);
 
 router.post("/logout", auth(), authController.logout);
