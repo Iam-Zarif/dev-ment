@@ -4,6 +4,7 @@ import applicationRouter from "./application.routes.js";
 import assessmentRouter from "./assessment.routes.js";
 import attemptRouter from "./attempt.routes.js";
 import authRouter from "./auth.routes.js";
+import dashboardRouter from "./dashboard.routes.js";
 import evaluationRouter from "./evaluation.routes.js";
 import invitationRouter from "./invitation.routes.js";
 import paymentRouter from "./payment.routes.js";
@@ -13,6 +14,7 @@ import questionRouter from "./question.routes.js";
 const router = Router();
 
 router.use("/auth", authRouter);
+router.use("/dashboard", dashboardRouter);
 router.use("/questions", questionRouter);
 router.use("/assessments", assessmentRouter);
 router.use("/applications", applicationRouter);

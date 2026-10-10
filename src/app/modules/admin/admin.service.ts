@@ -43,153 +43,65 @@ const revokeSessionsSafely = async (userId: string): Promise<void> => {
 	}
 };
 
-const getDashboard = async () => {
-	const [
-		users,
-		activeUsers,
-		blockedUsers,
-		deletedUsers,
-		admins,
-		recruiters,
-		candidates,
-		companies,
-		verifiedCompanies,
-		assessments,
-		publishedAssessments,
-		inProgressAttempts,
-		submittedAttempts,
-		finalizedEvaluations,
-		paidPayments,
-		pendingPayments,
-	] = await prisma.$transaction([
-		prisma.user.count({
-			where: {
-				deletedAt: null,
-			},
-		}),
-		prisma.user.count({
-			where: {
-				status: UserStatus.ACTIVE,
-				deletedAt: null,
-			},
-		}),
-		prisma.user.count({
-			where: {
-				status: UserStatus.BLOCKED,
-				deletedAt: null,
-			},
-		}),
-		prisma.user.count({
-			where: {
-				OR: [
-					{
-						status: UserStatus.DELETED,
-					},
-					{
-						deletedAt: {
-							not: null,
-						},
-					},
-				],
-			},
-		}),
-		prisma.user.count({
-			where: {
-				role: UserRole.ADMIN,
-				deletedAt: null,
-			},
-		}),
-		prisma.user.count({
-			where: {
-				role: UserRole.RECRUITER,
-				deletedAt: null,
-			},
-		}),
-		prisma.user.count({
-			where: {
-				role: UserRole.CANDIDATE,
-				deletedAt: null,
-			},
-		}),
-		prisma.company.count({
-			where: {
-				deletedAt: null,
-			},
-		}),
-		prisma.company.count({
-			where: {
-				isVerified: true,
-				deletedAt: null,
-			},
-		}),
-		prisma.assessment.count({
-			where: {
-				deletedAt: null,
-			},
-		}),
-		prisma.assessment.count({
-			where: {
-				status: AssessmentStatus.PUBLISHED,
-				deletedAt: null,
-			},
-		}),
-		prisma.attempt.count({
-			where: {
-				status: AttemptStatus.IN_PROGRESS,
-			},
-		}),
-		prisma.attempt.count({
-			where: {
-				status: {
-					in: [AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED],
-				},
-			},
-		}),
-		prisma.attempt.count({
-			where: {
-				evaluationStatus: EvaluationStatus.FINALIZED,
-			},
-		}),
-		prisma.payment.count({
-			where: {
-				status: PaymentStatus.PAID,
-			},
-		}),
-		prisma.payment.count({
-			where: {
-				status: PaymentStatus.PENDING,
-			},
-		}),
-	]);
+type AdminDashboardCounts = {
+	usersTotal: number; usersActive: number; usersBlocked: number;
+	usersDeleted: number; usersAdmins: number; usersRecruiters: number;
+	usersCandidates: number; companiesTotal: number; companiesVerified: number;
+	assessmentsTotal: number; assessmentsPublished: number;
+	attemptsInProgress: number; attemptsSubmitted: number;
+	attemptsFinalized: number; paymentsPaid: number; paymentsPending: number;
+};
 
+// Five grouped scans, one round-trip instead of sixteen count queries.
+const getDashboard = async () => {
+	const [s] = await prisma.$queryRaw<AdminDashboardCounts[]>`
+		WITH u AS (
+			SELECT
+				COUNT(*) FILTER (WHERE deleted_at IS NULL)::int AS "usersTotal",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND status = 'ACTIVE')::int AS "usersActive",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND status = 'BLOCKED')::int AS "usersBlocked",
+				COUNT(*) FILTER (WHERE deleted_at IS NOT NULL OR status = 'DELETED')::int AS "usersDeleted",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND role = 'ADMIN')::int AS "usersAdmins",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND role = 'RECRUITER')::int AS "usersRecruiters",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND role = 'CANDIDATE')::int AS "usersCandidates"
+			FROM users
+		), c AS (
+			SELECT COUNT(*) FILTER (WHERE deleted_at IS NULL)::int AS "companiesTotal",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND is_verified)::int AS "companiesVerified"
+			FROM companies
+		), a AS (
+			SELECT COUNT(*) FILTER (WHERE deleted_at IS NULL)::int AS "assessmentsTotal",
+				COUNT(*) FILTER (WHERE deleted_at IS NULL AND status = 'PUBLISHED')::int AS "assessmentsPublished"
+			FROM assessments
+		), t AS (
+			SELECT COUNT(*) FILTER (WHERE status = 'IN_PROGRESS')::int AS "attemptsInProgress",
+				COUNT(*) FILTER (WHERE status IN ('SUBMITTED', 'AUTO_SUBMITTED'))::int AS "attemptsSubmitted",
+				COUNT(*) FILTER (WHERE evaluation_status = 'FINALIZED')::int AS "attemptsFinalized"
+			FROM attempts
+		), p AS (
+			SELECT COUNT(*) FILTER (WHERE status = 'PAID')::int AS "paymentsPaid",
+				COUNT(*) FILTER (WHERE status = 'PENDING')::int AS "paymentsPending"
+			FROM payments
+		)
+		SELECT * FROM u CROSS JOIN c CROSS JOIN a CROSS JOIN t CROSS JOIN p
+	`;
+	if (!s) throw new AppError(500, "Unable to load admin dashboard");
 	return {
 		users: {
-			total: users,
-			active: activeUsers,
-			blocked: blockedUsers,
-			deleted: deletedUsers,
-			admins,
-			recruiters,
-			candidates,
+			total: s.usersTotal, active: s.usersActive, blocked: s.usersBlocked,
+			deleted: s.usersDeleted, admins: s.usersAdmins,
+			recruiters: s.usersRecruiters, candidates: s.usersCandidates,
 		},
 		companies: {
-			total: companies,
-			verified: verifiedCompanies,
-			unverified: Math.max(companies - verifiedCompanies, 0),
+			total: s.companiesTotal, verified: s.companiesVerified,
+			unverified: Math.max(s.companiesTotal - s.companiesVerified, 0),
 		},
-		assessments: {
-			total: assessments,
-			published: publishedAssessments,
-		},
+		assessments: { total: s.assessmentsTotal, published: s.assessmentsPublished },
 		attempts: {
-			inProgress: inProgressAttempts,
-			submitted: submittedAttempts,
-			finalizedEvaluations,
+			inProgress: s.attemptsInProgress, submitted: s.attemptsSubmitted,
+			finalizedEvaluations: s.attemptsFinalized,
 		},
-		payments: {
-			paid: paidPayments,
-			pending: pendingPayments,
-		},
+		payments: { paid: s.paymentsPaid, pending: s.paymentsPending },
 	};
 };
 

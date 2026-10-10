@@ -7,6 +7,7 @@ import apiRouter from "./app/routes/index.js";
 import { paymentWebhookRouter } from "./app/routes/payment.routes.js";
 import { config } from "./config/index.js";
 import { prisma } from "./lib/prisma/index.js";
+import { logger } from "./shared/utils/index.js";
 import { connectRedis, redisClient } from "./lib/redis/index.js";
 import {
 	globalErrorHandler,
@@ -16,6 +17,21 @@ import {
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+
+// Log request duration for diagnosis without changing authorization behavior.
+app.use((req, res, next) => {
+	const start = process.hrtime.bigint();
+	res.on("finish", () => {
+		const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+		if (durationMs >= 750) {
+			logger.warn(
+				{ method: req.method, path: req.path, status: res.statusCode, durationMs: Math.round(durationMs) },
+				"Slow API request",
+			);
+		}
+	});
+	next();
+});
 
 app.use(
 	cors({
