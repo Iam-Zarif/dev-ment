@@ -4,6 +4,7 @@ import { auth, validateRequest } from "../../shared/middlewares/index.js";
 import { idParamSchema } from "../../shared/validation/index.js";
 import { paymentController } from "../modules/payment/payment.controller.js";
 import {
+	checkoutSessionParamsSchema,
 	createCheckoutSchema,
 	paymentListQuerySchema,
 } from "../modules/payment/payment.validation.js";
@@ -38,6 +39,12 @@ router.post(
 );
 
 router.get("/credits", paymentController.getCredits);
+
+router.get(
+	"/checkout-session/:sessionId",
+	validateRequest({ params: checkoutSessionParamsSchema }),
+	paymentController.getByCheckoutSession,
+);
 
 router.get(
 	"/",

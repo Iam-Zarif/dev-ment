@@ -777,6 +777,33 @@ const getById = async (userId: string, paymentId: string) => {
 	};
 };
 
+const getByCheckoutSession = async (userId: string, sessionId: string) => {
+	const recruiter = await getRecruiterContext(userId);
+
+	const payment = await prisma.payment.findFirst({
+		where: {
+			stripeCheckoutSessionId: sessionId,
+			recruiterId: recruiter.recruiterId,
+		},
+		select: {
+			id: true,
+			status: true,
+			paidAt: true,
+			creditGrant: {
+				select: {
+					id: true,
+				},
+			},
+		},
+	});
+
+	if (!payment) {
+		throw new AppError(404, "Checkout payment not found");
+	}
+
+	return payment;
+};
+
 const getCredits = async (userId: string) => {
 	const recruiter = await getRecruiterContext(userId);
 
@@ -1056,6 +1083,7 @@ export const paymentService = {
 	createCheckout,
 	getMine,
 	getById,
+	getByCheckoutSession,
 	getCredits,
 	handleWebhook,
 };

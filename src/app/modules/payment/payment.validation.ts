@@ -34,6 +34,16 @@ export const paymentListQuerySchema = z
 	})
 	.strict();
 
+export const checkoutSessionParamsSchema = z
+	.object({
+		sessionId: z
+			.string()
+			.trim()
+			.max(255)
+			.regex(/^cs_(test|live)_[A-Za-z0-9]+$/, "Invalid checkout session ID"),
+	})
+	.strict();
+
 export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>;
 
 export type PaymentListQuery = z.infer<typeof paymentListQuerySchema>;

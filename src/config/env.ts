@@ -305,10 +305,16 @@ const allowedOrigins =
 				: ["http://localhost:3000"];
 
 const stripeSuccessUrl =
-	raw.STRIPE_SUCCESS_URL ?? `${apiBaseUrl}/payments/success`;
+	raw.STRIPE_SUCCESS_URL ??
+	(raw.FRONTEND_URL
+		? new URL("/payment/success", raw.FRONTEND_URL).toString()
+		: `${apiBaseUrl}/payments/success`);
 
 const stripeCancelUrl =
-	raw.STRIPE_CANCEL_URL ?? `${apiBaseUrl}/payments/cancel`;
+	raw.STRIPE_CANCEL_URL ??
+	(raw.FRONTEND_URL
+		? new URL("/payment/cancel", raw.FRONTEND_URL).toString()
+		: `${apiBaseUrl}/payments/cancel`);
 
 const emailFromAddress = raw.EMAIL_FROM_ADDRESS ?? raw.SMTP_USER;
 
