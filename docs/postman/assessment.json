@@ -1,166 +1,270 @@
 {
-	"info": {
-		"_postman_id": "devment-clean-assessment",
-		"name": "Dev-ment - Assessment APIs",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{recruiterToken}}",
-				"type": "string"
-			}
-		]
-	},
-	"item": [
-		{
-			"name": "Get Published Assessments",
-			"request": {
-				"method": "GET",
-				"auth": {
-					"type": "noauth"
-				},
-				"url": "{{baseUrl}}/assessments/published?page=1&limit=10"
-			}
-		},
-		{
-			"name": "Get Published Assessment",
-			"request": {
-				"method": "GET",
-				"auth": {
-					"type": "noauth"
-				},
-				"url": "{{baseUrl}}/assessments/published/{{assessmentId}}"
-			}
-		},
-		{
-			"name": "Create Assessment",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\"Node.js\", \"TypeScript\", \"PostgreSQL\"],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
-				},
-				"url": "{{baseUrl}}/assessments"
-			}
-		},
-		{
-			"name": "Get Assessments",
-			"request": {
-				"method": "GET",
-				"url": "{{baseUrl}}/assessments?page=1&limit=10"
-			}
-		},
-		{
-			"name": "Get Assessment",
-			"request": {
-				"method": "GET",
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
-			}
-		},
-		{
-			"name": "Update Assessment",
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65\n}"
-				},
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
-			}
-		},
-		{
-			"name": "Delete Assessment",
-			"request": {
-				"method": "DELETE",
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}"
-			}
-		},
-		{
-			"name": "Attach Question",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
-				},
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions"
-			}
-		},
-		{
-			"name": "Update Assessment Question",
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"marks\": 20\n}"
-				},
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
-			}
-		},
-		{
-			"name": "Remove Assessment Question",
-			"request": {
-				"method": "DELETE",
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
-			}
-		},
-		{
-			"name": "Reorder Assessment Questions",
-			"request": {
-				"method": "PATCH",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"assessmentQuestionIds\": [\"{{assessmentQuestionId}}\"]\n}"
-				},
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order"
-			}
-		},
-		{
-			"name": "Publish Assessment",
-			"request": {
-				"method": "POST",
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/publish"
-			}
-		},
-		{
-			"name": "Close Assessment",
-			"request": {
-				"method": "POST",
-				"url": "{{baseUrl}}/assessments/{{assessmentId}}/close"
-			}
-		}
-	]
+  "info": {
+    "_postman_id": "devment-clean-assessment",
+    "name": "Dev-ment - Assessment APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Public discovery endpoints and Recruiter-only assessment builder endpoints. Draft creation/sync supports incomplete fields; publishing validates readiness and consumes an assessment credit."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{recruiterToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Get Published Assessments",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "{{baseUrl}}/assessments/published?page=1&limit=10"
+      }
+    },
+    {
+      "name": "Get Published Assessment",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "{{baseUrl}}/assessments/published/{{assessmentId}}"
+      }
+    },
+    {
+      "name": "Create Assessment",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\"Node.js\", \"TypeScript\", \"PostgreSQL\"],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
+        },
+        "url": "{{baseUrl}}/assessments"
+      }
+    },
+    {
+      "name": "Get Assessments",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/assessments?page=1&limit=10"
+      }
+    },
+    {
+      "name": "Get Assessment",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+      }
+    },
+    {
+      "name": "Update Assessment",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65\n}"
+        },
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+      }
+    },
+    {
+      "name": "Delete Assessment",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+      }
+    },
+    {
+      "name": "Attach Question",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
+        },
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions"
+      }
+    },
+    {
+      "name": "Update Assessment Question",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"marks\": 20\n}"
+        },
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+      }
+    },
+    {
+      "name": "Remove Assessment Question",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+      }
+    },
+    {
+      "name": "Reorder Assessment Questions",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assessmentQuestionIds\": [\"{{assessmentQuestionId}}\"]\n}"
+        },
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order"
+      }
+    },
+    {
+      "name": "Publish Assessment",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/publish",
+        "description": "Recruiter only. Only complete valid drafts can be published; publication consumes eligible assessment credits."
+      }
+    },
+    {
+      "name": "Close Assessment",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/close"
+      }
+    },
+    {
+      "name": "Create Draft",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/assessments/draft",
+        "description": "Create an incomplete assessment draft; all fields optional. The returned ID is used to sync the draft.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Draft Junior Backend Assessment\",\n  \"jobRole\": \"Backend Developer\",\n  \"durationMinutes\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Sync Draft (Auto Save)",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/draft",
+        "description": "Partially save draft fields. saveMode=AUTO is the default; this is not the publish endpoint.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Junior Backend Assessment\",\n  \"durationMinutes\": 60,\n  \"saveMode\": \"AUTO\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Save Draft (Manual)",
+      "request": {
+        "method": "PATCH",
+        "url": "{{baseUrl}}/assessments/{{assessmentId}}/draft",
+        "description": "Manual save of draft fields; saveMode=MANUAL.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Junior Backend Assessment\",\n  \"saveMode\": \"MANUAL\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    }
+  ]
 }

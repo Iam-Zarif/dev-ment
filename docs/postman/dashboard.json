@@ -1,0 +1,48 @@
+{
+  "info": {
+    "_postman_id": "devment-clean-dashboard",
+    "name": "Dev-ment - Dashboard APIs",
+    "description": "Role-restricted live summary endpoints for Candidate and Recruiter dashboards.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Recruiter Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/dashboard/recruiter",
+        "description": "Recruiter-only dashboard metrics.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{recruiterToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Candidate Dashboard",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/dashboard/candidate",
+        "description": "Candidate-only dashboard metrics.",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{candidateToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
