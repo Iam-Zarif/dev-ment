@@ -1,0 +1,1671 @@
+{
+  "info": {
+    "name": "Dev-ment API — Complete Collection",
+    "description": "Current backend routes, grouped by module and synchronized with src/app/routes/*.routes.ts. Use the accompanying globals or environment; API base URL includes /api/v1. JWT bearer tokens are role-specific. Session refresh and reset password use HttpOnly cookies via Postman's cookie jar. Stripe webhook is invoked by Stripe, not by manual unsigned requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication and account recovery. Login issues an access token plus an HttpOnly refresh cookie. The refresh, session and reset-password flows use Postman's cookie jar; they do not accept a refresh token in JSON.",
+      "item": [
+        {
+          "name": "Register Candidate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Demo Candidate\",\n  \"email\": \"{{candidateEmail}}\",\n  \"password\": \"{{candidatePassword}}\",\n  \"confirmPassword\": \"{{candidatePassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register/candidate",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Register Recruiter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Demo Recruiter\",\n  \"email\": \"{{recruiterEmail}}\",\n  \"companyName\": \"Demo Company\",\n  \"jobTitle\": \"Technical Recruiter\",\n  \"password\": \"{{recruiterPassword}}\",\n  \"confirmPassword\": \"{{recruiterPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register/recruiter",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\",\n  \"otp\": \"{{otp}}\",\n  \"purpose\": \"CANDIDATE_REGISTRATION\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-otp",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\",\n  \"purpose\": \"CANDIDATE_REGISTRATION\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/resend-otp",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\",\n  \"password\": \"{{candidatePassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Candidate login. Save the response data.accessToken as candidateToken in active Postman variables, and let Postman retain the devment_refresh_token cookie."
+          }
+        },
+        {
+          "name": "Google Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"{{googleIdToken}}\",\n  \"role\": \"CANDIDATE\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/google",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/refresh",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Requires devment_refresh_token HttpOnly cookie from Login/OTP verification (same Postman host). Bodyless request; refresh rotates the session and sets a new cookie."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "Requires Bearer access token AND devment_refresh_token cookie from the same session. Both are required; request has no body."
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Verify Password Reset OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{candidateEmail}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/verify-password-reset-otp",
+            "description": "Use the OTP from the reset email. A successful response sets an HttpOnly reset-session cookie used by Reset Password.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"NewPassword123!\",\n  \"confirmPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/reset-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Requires the HttpOnly password-reset cookie issued by Verify Password Reset OTP. Do not send a reset token in the JSON body."
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/auth/me",
+            "description": "Requires Bearer accessToken."
+          }
+        },
+        {
+          "name": "Verify Current Session",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/session",
+            "description": "Verifies devment_refresh_token HttpOnly cookie and Redis session non-destructively; returns {userId, role}. No Bearer token or request body.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Recruiter",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Recruiter login. Save response data.accessToken as recruiterToken; refresh cookie is stored in the Postman cookie jar.",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recruiterEmail}}\",\n  \"password\": \"{{recruiterPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Admin login. Save response data.accessToken as adminToken. Use an existing administrator account.",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Role-restricted live summary endpoints for Candidate and Recruiter dashboards.",
+      "item": [
+        {
+          "name": "Recruiter Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/dashboard/recruiter",
+            "description": "Recruiter-only dashboard metrics.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Candidate Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/dashboard/candidate",
+            "description": "Candidate-only dashboard metrics.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Question",
+      "description": "Recruiter-only question bank. Create request shape depends on type: MCQ, SHORT_TEXT, LONG_TEXT, or CODING.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{recruiterToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Create Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"MCQ\",\n  \"contentHtml\": \"<p>Which one is a JavaScript library?</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"selectionMode\": \"SINGLE\",\n  \"options\": [\n    {\n      \"optionHtml\": \"React\",\n      \"isCorrect\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"optionHtml\": \"PostgreSQL\",\n      \"isCorrect\": false,\n      \"sortOrder\": 2\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/questions",
+            "description": "MCQ example. Exactly one option must be correct when selectionMode is SINGLE. For MULTIPLE, at least one option must be correct."
+          }
+        },
+        {
+          "name": "Get Questions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/questions?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Get Question",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/questions/{{questionId}}"
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 10\n}"
+            },
+            "url": "{{baseUrl}}/questions/{{questionId}}"
+          }
+        },
+        {
+          "name": "Duplicate Question",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/questions/{{questionId}}/duplicate"
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/questions/{{questionId}}"
+          }
+        },
+        {
+          "name": "Create Short Text Question",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/questions",
+            "description": "Recruiter-only SHORT_TEXT question. No MCQ options or coding fields.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SHORT_TEXT\",\n  \"contentHtml\": \"<p>Explain REST APIs briefly.</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 5,\n  \"evaluationRubric\": \"Relevance and clarity.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Long Text Question",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/questions",
+            "description": "Recruiter-only LONG_TEXT question.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"LONG_TEXT\",\n  \"contentHtml\": \"<p>Describe a scalable API architecture.</p>\",\n  \"difficulty\": \"INTERMEDIATE\",\n  \"defaultMarks\": 15,\n  \"evaluationRubric\": \"Design trade-offs, security, observability.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Coding Question",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/questions",
+            "description": "Recruiter-only CODING question. Must include allowedLanguages, execution limits and at least one test case. Creating this question does not execute submitted code.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"CODING\",\n  \"contentHtml\": \"<p>Print the given input.</p>\",\n  \"difficulty\": \"BEGINNER\",\n  \"defaultMarks\": 10,\n  \"allowedLanguages\": [\n    \"javascript\"\n  ],\n  \"starterCode\": {\n    \"javascript\": \"const input = '';\\n\"\n  },\n  \"timeLimitMs\": 1000,\n  \"memoryLimitKb\": 65536,\n  \"testCases\": [\n    {\n      \"inputText\": \"hello\",\n      \"expectedOutput\": \"hello\",\n      \"isHidden\": false,\n      \"weight\": 1,\n      \"sortOrder\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assessment",
+      "description": "Public discovery endpoints and Recruiter-only assessment builder endpoints. Draft creation/sync supports incomplete fields; publishing validates readiness and consumes an assessment credit.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{recruiterToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Published Assessments",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/assessments/published?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Get Published Assessment",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/assessments/published/{{assessmentId}}"
+          }
+        },
+        {
+          "name": "Create Assessment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Junior Backend Developer Assessment\",\n  \"jobRole\": \"Junior Backend Developer\",\n  \"descriptionHtml\": \"<p>Backend developer hiring assessment.</p>\",\n  \"instructionsHtml\": \"<p>Complete all questions within the given time.</p>\",\n  \"skills\": [\"Node.js\", \"TypeScript\", \"PostgreSQL\"],\n  \"difficulty\": \"INTERMEDIATE\",\n  \"durationMinutes\": 60,\n  \"passPercentage\": 60,\n  \"suspiciousThreshold\": 3\n}"
+            },
+            "url": "{{baseUrl}}/assessments"
+          }
+        },
+        {
+          "name": "Get Assessments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assessments?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Get Assessment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+          }
+        },
+        {
+          "name": "Update Assessment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Backend Developer Technical Assessment\",\n  \"durationMinutes\": 75,\n  \"passPercentage\": 65\n}"
+            },
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+          }
+        },
+        {
+          "name": "Delete Assessment",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}"
+          }
+        },
+        {
+          "name": "Attach Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"marks\": 10\n}"
+            },
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions"
+          }
+        },
+        {
+          "name": "Update Assessment Question",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"marks\": 20\n}"
+            },
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+          }
+        },
+        {
+          "name": "Remove Assessment Question",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/{{assessmentQuestionId}}"
+          }
+        },
+        {
+          "name": "Reorder Assessment Questions",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assessmentQuestionIds\": [\"{{assessmentQuestionId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/questions/order"
+          }
+        },
+        {
+          "name": "Publish Assessment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/publish",
+            "description": "Recruiter only. Only complete valid drafts can be published; publication consumes eligible assessment credits."
+          }
+        },
+        {
+          "name": "Close Assessment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/close"
+          }
+        },
+        {
+          "name": "Create Draft",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/assessments/draft",
+            "description": "Create an incomplete assessment draft; all fields optional. The returned ID is used to sync the draft.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Draft Junior Backend Assessment\",\n  \"jobRole\": \"Backend Developer\",\n  \"durationMinutes\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Draft (Auto Save)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/draft",
+            "description": "Partially save draft fields. saveMode=AUTO is the default; this is not the publish endpoint.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Junior Backend Assessment\",\n  \"durationMinutes\": 60,\n  \"saveMode\": \"AUTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Draft (Manual)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/assessments/{{assessmentId}}/draft",
+            "description": "Manual save of draft fields; saveMode=MANUAL.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Junior Backend Assessment\",\n  \"saveMode\": \"MANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Application",
+      "description": "Candidate applications and recruiter selection workflow. Candidate professional URLs are optional and update candidate profile links on apply.",
+      "item": [
+        {
+          "name": "Apply to Assessment",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assessmentId\": \"{{assessmentId}}\",\n  \"coverNote\": \"Interested in the role.\",\n  \"githubUrl\": \"https://github.com/example\",\n  \"linkedinUrl\": \"https://www.linkedin.com/in/example\",\n  \"portfolioUrl\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/applications",
+            "description": "Candidate only. Valid assessmentId UUID required. githubUrl, linkedinUrl and portfolioUrl are optional valid URLs; empty strings are not accepted; omitted links are left unchanged."
+          }
+        },
+        {
+          "name": "Get My Applications",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/me?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get My Application",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/me/{{applicationId}}"
+          }
+        },
+        {
+          "name": "Get Recruiter Applications",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/recruiter?assessmentId={{assessmentId}}&page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get Recruiter Application",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/recruiter/{{applicationId}}"
+          }
+        },
+        {
+          "name": "Shortlist Application",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/applications/{{applicationId}}/shortlist"
+          }
+        },
+        {
+          "name": "Reject Application",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Not selected for this role.\"\n}"
+            },
+            "url": "{{baseUrl}}/applications/{{applicationId}}/reject"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invitation",
+      "description": "Recruiter-managed invitations, candidate email-token verification, and candidate authenticated in-app acceptance by invitation ID.",
+      "item": [
+        {
+          "name": "Send Invitation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationIds\": [\"{{applicationId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/invitations"
+          }
+        },
+        {
+          "name": "Get Invitations",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/invitations?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Verify Invitation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{invitationToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/invitations/verify"
+          }
+        },
+        {
+          "name": "Accept Invitation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{invitationToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/invitations/accept"
+          }
+        },
+        {
+          "name": "Resend Invitation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/invitations/{{invitationId}}/resend"
+          }
+        },
+        {
+          "name": "Revoke Invitation",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/invitations/{{invitationId}}/revoke"
+          }
+        },
+        {
+          "name": "Accept Invitation by ID",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/invitations/{{invitationId}}/accept",
+            "description": "Candidate only. Authenticated in-app invitation acceptance by owned invitation UUID; no email token request body. Requires PENDING and unexpired invitation, INVITED application and published assessment.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attempt",
+      "description": "Candidate-only timed assessment attempts. Start requires an accepted invitation. Answers use one of three strict shapes (MCQ, text, code).",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{candidateToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Start Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/attempts/start",
+            "description": "Candidate only; valid ACCEPTED invitation required. An attempt cannot be started twice."
+          }
+        },
+        {
+          "name": "Get Attempt",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/attempts/{{attemptId}}"
+          }
+        },
+        {
+          "name": "Save Answer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selectedOptionIds\": [\"{{optionId}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+            "description": "MCQ example: selectedOptionIds must be an array of option UUIDs. Choose a request variant matching the actual question type; save only one allowed shape."
+          }
+        },
+        {
+          "name": "Record Proctor Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events",
+            "description": "Candidate only. Accepted eventType: TAB_HIDDEN, WINDOW_BLUR, FULLSCREEN_EXIT. occurredAt must include UTC offset; clientEventId must be unique."
+          }
+        },
+        {
+          "name": "Submit Attempt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
+          }
+        },
+        {
+          "name": "Save Text Answer",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+            "description": "Use for SHORT_TEXT and LONG_TEXT questions; do not include MCQ or coding fields.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answerText\": \"This is my answer.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Coding Answer",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+            "description": "Use for CODING questions; language must be one allowed by that question.",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codeAnswer\": \"console.log('hello');\",\n  \"language\": \"javascript\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Evaluation",
+      "description": "Recruiter evaluation workflow and candidate released results. Manual scores are non-negative; finalized results are released separately.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{recruiterToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Evaluations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/evaluations?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get Evaluation",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/evaluations/{{attemptId}}"
+          }
+        },
+        {
+          "name": "Review Answer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"manualScore\": 5,\n  \"recruiterFeedback\": \"Good answer.\"\n}"
+            },
+            "url": "{{baseUrl}}/evaluations/{{attemptId}}/questions/{{assessmentQuestionId}}"
+          }
+        },
+        {
+          "name": "Evaluate Attempt",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/evaluations/{{attemptId}}/evaluate"
+          }
+        },
+        {
+          "name": "Finalize Evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"finalFeedback\": \"Thank you for completing the assessment.\"\n}"
+            },
+            "url": "{{baseUrl}}/evaluations/{{attemptId}}/finalize"
+          }
+        },
+        {
+          "name": "Release Result",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/evaluations/{{attemptId}}/release",
+            "description": "Recruiter only; releases a finalized evaluation to the candidate."
+          }
+        },
+        {
+          "name": "Get Candidate Result",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/evaluations/results/me/{{attemptId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "description": "Pricing plans, recruiter payment history, credits and Stripe checkout. Payment status/credit grants are confirmed by a signed Stripe webhook; success redirect alone is not proof of payment.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{recruiterToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Pricing Plans",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/payments/plans"
+          }
+        },
+        {
+          "name": "Create Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planCode\": \"PRO\"\n}"
+            },
+            "url": "{{baseUrl}}/payments/checkout"
+          }
+        },
+        {
+          "name": "Get My Payments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get Payment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/{{paymentId}}"
+          }
+        },
+        {
+          "name": "Get Credits",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/credits"
+          }
+        },
+        {
+          "name": "Checkout Success",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/payments/success?session_id={{stripeSessionId}}",
+            "description": "Public Stripe redirect callback, typically redirects (303) to FRONTEND_URL/payment/success?session_id=... when frontend URL configured. Does NOT itself grant credits."
+          }
+        },
+        {
+          "name": "Checkout Cancel",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/payments/cancel",
+            "description": "Public Stripe redirect callback; typically 303 to frontend /payment/cancel when FRONTEND_URL is configured."
+          }
+        },
+        {
+          "name": "Stripe Webhook",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "For Stripe server-to-server delivery only. Requires authentic Stripe-Signature and raw application/json body. Do NOT manually send unsigned requests; payment/credits are finalized via webhook.",
+            "url": "{{baseUrl}}/payments/webhook"
+          }
+        },
+        {
+          "name": "Get Checkout Payment Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/payments/checkout-session/{{stripeSessionId}}",
+            "description": "Recruiter-only lookup by Stripe Checkout session ID for the logged-in owner. Returns status, paidAt and creditGrant; confirmation requires status=PAID and creditGrant present.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "description": "Candidate and Recruiter profile updates plus role-scoped Cloudinary upload-signature generation. Uploaded asset itself goes to Cloudinary.",
+      "item": [
+        {
+          "name": "Update Candidate Profile",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Demo Candidate\",\n  \"headline\": \"Backend Developer\",\n  \"bio\": \"Backend focused developer\",\n  \"experienceYears\": 2.5,\n  \"skills\": [\"TypeScript\", \"Node.js\", \"PostgreSQL\"],\n  \"githubUrl\": \"https://github.com/example\"\n}"
+            },
+            "url": "{{baseUrl}}/profiles/candidate",
+            "description": "Candidate-only. Partial profile update; candidate link fields githubUrl, linkedinUrl, portfolioUrl, resumeUrl accept URL or null."
+          }
+        },
+        {
+          "name": "Update Recruiter Profile",
+          "request": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{recruiterToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"legalName\": \"Demo Recruiter\",\n  \"jobTitle\": \"Technical Recruiter\",\n  \"phone\": \"+8801700000000\",\n  \"companyWebsiteUrl\": \"https://example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/profiles/recruiter"
+          }
+        },
+        {
+          "name": "Create Upload Signature",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{candidateToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetType\": \"PROFILE_IMAGE\"\n}"
+            },
+            "url": "{{baseUrl}}/profiles/upload-signature"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "ADMIN role required for all routes in this collection. Some operations alter user access, pricing, credits, or company verification.",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{adminToken}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/dashboard"
+          }
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/users?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BLOCKED\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/status"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/admin/users/{{userId}}",
+            "description": "ADMIN only. Destructive/irreversible user management action; run against test data with care."
+          }
+        },
+        {
+          "name": "Get Companies",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/companies?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Update Company Verification",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isVerified\": true\n}"
+            },
+            "url": "{{baseUrl}}/admin/companies/{{companyId}}/verification"
+          }
+        },
+        {
+          "name": "Get Pricing Plans",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/pricing-plans"
+          }
+        },
+        {
+          "name": "Update Pricing Plan",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pro\",\n  \"price\": 5,\n  \"assessmentCredits\": 4,\n  \"validityDays\": 45,\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/admin/pricing-plans/{{planId}}"
+          }
+        },
+        {
+          "name": "Get Recruiter Credits",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits"
+          }
+        },
+        {
+          "name": "Grant Recruiter Credits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credits\": 2,\n  \"validityDays\": 30,\n  \"reason\": \"Manual admin credit\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/recruiters/{{recruiterProfileId}}/credits",
+            "description": "ADMIN only. Grants manual assessment credits to specified recruiter profile and records an audit event."
+          }
+        },
+        {
+          "name": "Get Payments",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/payments?page=1&limit=20"
+          }
+        },
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/audit-logs?page=1&limit=20"
+          }
+        }
+      ]
+    }
+  ]
+}
