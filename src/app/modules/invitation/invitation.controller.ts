@@ -114,6 +114,20 @@ const accept = catchAsync(async (req, res) => {
 	});
 });
 
+const acceptById = catchAsync(async (req, res) => {
+	const data = await invitationService.acceptById(
+		getUserId(req),
+		getInvitationId(req),
+		req.ip,
+	);
+
+	return sendResponse(res, {
+		statusCode: 200,
+		message: "Invitation accepted successfully",
+		data,
+	});
+});
+
 export const invitationController = {
 	create,
 	getAll,
@@ -121,4 +135,5 @@ export const invitationController = {
 	revoke,
 	verify,
 	accept,
+	acceptById,
 };

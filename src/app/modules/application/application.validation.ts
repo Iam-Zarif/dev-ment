@@ -19,6 +19,9 @@ export const applyAssessmentSchema = z
 			.max(APPLICATION_LIMITS.COVER_NOTE_MAX_LENGTH, "Cover note is too long")
 			.nullable()
 			.optional(),
+		githubUrl: z.url("GitHub URL must be valid").optional(),
+		linkedinUrl: z.url("LinkedIn URL must be valid").optional(),
+		portfolioUrl: z.url("Portfolio URL must be valid").optional(),
 	})
 	.strict();
 

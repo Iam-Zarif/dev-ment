@@ -30,6 +30,15 @@ router.post(
 );
 
 router.post(
+	"/:id/accept",
+	auth(UserRole.CANDIDATE),
+	validateRequest({
+		params: idParamSchema,
+	}),
+	invitationController.acceptById,
+);
+
+router.post(
 	"/",
 	auth(UserRole.RECRUITER),
 	validateRequest({

@@ -80,6 +80,36 @@ const apply = async (
 			throw new AppError(409, "You have already applied to this assessment");
 		}
 
+		const hasProfileLinks =
+			input.githubUrl !== undefined ||
+			input.linkedinUrl !== undefined ||
+			input.portfolioUrl !== undefined;
+
+		if (hasProfileLinks) {
+			await tx.candidateProfile.update({
+				where: {
+					id: candidate.candidateId,
+				},
+				data: {
+					...(input.githubUrl !== undefined
+						? {
+								githubUrl: input.githubUrl,
+							}
+						: {}),
+					...(input.linkedinUrl !== undefined
+						? {
+								linkedinUrl: input.linkedinUrl,
+							}
+						: {}),
+					...(input.portfolioUrl !== undefined
+						? {
+								portfolioUrl: input.portfolioUrl,
+							}
+						: {}),
+				},
+			});
+		}
+
 		const application = await tx.application.create({
 			data: {
 				assessment: {
@@ -244,6 +274,14 @@ const getMine = async (userId: string, query: ApplicationListQuery) => {
 						expiresAt: true,
 						sentAt: true,
 						acceptedAt: true,
+						attempt: {
+							select: {
+								id: true,
+								status: true,
+								startedAt: true,
+								submittedAt: true,
+							},
+						},
 					},
 				},
 			},
@@ -304,6 +342,14 @@ const getMineById = async (userId: string, applicationId: string) => {
 					expiresAt: true,
 					sentAt: true,
 					acceptedAt: true,
+					attempt: {
+						select: {
+							id: true,
+							status: true,
+							startedAt: true,
+							submittedAt: true,
+						},
+					},
 				},
 			},
 		},

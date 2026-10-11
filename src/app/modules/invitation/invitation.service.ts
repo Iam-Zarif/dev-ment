@@ -872,6 +872,119 @@ const verify = async (userId: string, input: InvitationTokenInput) => {
 	};
 };
 
+const acceptOwnedInvitation = async (
+	tx: Prisma.TransactionClient,
+	userId: string,
+	candidateId: string,
+	invitationId: string,
+	ipAddress?: string,
+) => {
+	const invitation = await tx.invitation.findFirst({
+		where: {
+			id: invitationId,
+			application: {
+				is: {
+					candidateId,
+				},
+			},
+		},
+		select: {
+			id: true,
+			status: true,
+			expiresAt: true,
+			application: {
+				select: {
+					id: true,
+					status: true,
+					assessment: {
+						select: {
+							id: true,
+							status: true,
+							closesAt: true,
+						},
+					},
+				},
+			},
+		},
+	});
+
+	if (!invitation) {
+		throw new AppError(404, "Invitation not found");
+	}
+
+	if (invitation.status === InvitationStatus.ACCEPTED) {
+		throw new AppError(409, "Invitation has already been accepted");
+	}
+
+	if (invitation.status === InvitationStatus.REVOKED) {
+		throw new AppError(409, "Invitation has been revoked");
+	}
+
+	if (invitation.status === InvitationStatus.EXPIRED) {
+		throw new AppError(410, "Invitation has expired");
+	}
+
+	if (invitation.application.status !== ApplicationStatus.INVITED) {
+		throw new AppError(409, "Application is not currently invited");
+	}
+
+	const now = new Date();
+
+	if (
+		invitation.expiresAt <= now ||
+		invitation.application.assessment.status !== AssessmentStatus.PUBLISHED ||
+		(invitation.application.assessment.closesAt &&
+			invitation.application.assessment.closesAt <= now)
+	) {
+		throw new AppError(410, "Invitation has expired");
+	}
+
+	const accepted = await tx.invitation.updateMany({
+		where: {
+			id: invitation.id,
+			status: InvitationStatus.PENDING,
+			expiresAt: {
+				gt: now,
+			},
+		},
+		data: {
+			status: InvitationStatus.ACCEPTED,
+			acceptedAt: now,
+		},
+	});
+
+	if (accepted.count !== 1) {
+		throw new AppError(409, "Invitation status has already changed");
+	}
+
+	await auditService.create(
+		{
+			actorUserId: userId,
+			action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
+			entityType: AUDIT_ENTITY_TYPES.INVITATION,
+			entityId: invitation.id,
+			metadata: {
+				applicationId: invitation.application.id,
+				assessmentId: invitation.application.assessment.id,
+			},
+			...(ipAddress
+				? {
+						ipAddress,
+					}
+				: {}),
+		},
+		tx,
+	);
+
+	return {
+		id: invitation.id,
+		status: InvitationStatus.ACCEPTED,
+		acceptedAt: now,
+		applicationId: invitation.application.id,
+		assessmentId: invitation.application.assessment.id,
+	};
+};
+
 const accept = async (
 	userId: string,
 	input: InvitationTokenInput,
@@ -888,20 +1001,9 @@ const accept = async (
 			},
 			select: {
 				id: true,
-				status: true,
-				expiresAt: true,
 				application: {
 					select: {
-						id: true,
-						status: true,
 						candidateId: true,
-						assessment: {
-							select: {
-								id: true,
-								status: true,
-								closesAt: true,
-							},
-						},
 					},
 				},
 			},
@@ -918,77 +1020,31 @@ const accept = async (
 			);
 		}
 
-		if (invitation.status === InvitationStatus.ACCEPTED) {
-			throw new AppError(409, "Invitation has already been accepted");
-		}
-
-		if (invitation.status === InvitationStatus.REVOKED) {
-			throw new AppError(409, "Invitation has been revoked");
-		}
-
-		if (invitation.status === InvitationStatus.EXPIRED) {
-			throw new AppError(410, "Invitation has expired");
-		}
-
-		if (invitation.application.status !== ApplicationStatus.INVITED) {
-			throw new AppError(409, "Application is not currently invited");
-		}
-
-		const now = new Date();
-
-		if (
-			invitation.expiresAt <= now ||
-			invitation.application.assessment.status !== AssessmentStatus.PUBLISHED ||
-			(invitation.application.assessment.closesAt &&
-				invitation.application.assessment.closesAt <= now)
-		) {
-			throw new AppError(410, "Invitation has expired");
-		}
-
-		const accepted = await tx.invitation.updateMany({
-			where: {
-				id: invitation.id,
-				status: InvitationStatus.PENDING,
-				expiresAt: {
-					gt: now,
-				},
-			},
-			data: {
-				status: InvitationStatus.ACCEPTED,
-				acceptedAt: now,
-			},
-		});
-
-		if (accepted.count !== 1) {
-			throw new AppError(409, "Invitation status has already changed");
-		}
-
-		await auditService.create(
-			{
-				actorUserId: userId,
-				action: AUDIT_ACTIONS.INVITATION_ACCEPTED,
-				entityType: AUDIT_ENTITY_TYPES.INVITATION,
-				entityId: invitation.id,
-				metadata: {
-					applicationId: invitation.application.id,
-					assessmentId: invitation.application.assessment.id,
-				},
-				...(ipAddress
-					? {
-							ipAddress,
-						}
-					: {}),
-			},
+		return acceptOwnedInvitation(
 			tx,
+			userId,
+			candidate.candidateId,
+			invitation.id,
+			ipAddress,
 		);
+	});
+};
 
-		return {
-			id: invitation.id,
-			status: InvitationStatus.ACCEPTED,
-			acceptedAt: now,
-			applicationId: invitation.application.id,
-			assessmentId: invitation.application.assessment.id,
-		};
+const acceptById = async (
+	userId: string,
+	invitationId: string,
+	ipAddress?: string,
+) => {
+	return prisma.$transaction(async (tx) => {
+		const candidate = await getCandidateContext(userId, tx);
+
+		return acceptOwnedInvitation(
+			tx,
+			userId,
+			candidate.candidateId,
+			invitationId,
+			ipAddress,
+		);
 	});
 };
 
@@ -999,4 +1055,5 @@ export const invitationService = {
 	revoke,
 	verify,
 	accept,
+	acceptById,
 };
