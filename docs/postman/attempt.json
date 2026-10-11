@@ -1,84 +1,136 @@
 {
-	"info": {
-		"_postman_id": "devment-clean-attempt",
-		"name": "Dev-ment - Attempt APIs",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"auth": {
-		"type": "bearer",
-		"bearer": [
-			{
-				"key": "token",
-				"value": "{{candidateToken}}",
-				"type": "string"
-			}
-		]
-	},
-	"item": [
-		{
-			"name": "Start Attempt",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
-				},
-				"url": "{{baseUrl}}/attempts/start"
-			}
-		},
-		{
-			"name": "Get Attempt",
-			"request": {
-				"method": "GET",
-				"url": "{{baseUrl}}/attempts/{{attemptId}}"
-			}
-		},
-		{
-			"name": "Save Answer",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"selectedOptionIds\": [\"{{optionId}}\"]\n}"
-				},
-				"url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}"
-			}
-		},
-		{
-			"name": "Record Proctor Event",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\"\n}"
-				},
-				"url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events"
-			}
-		},
-		{
-			"name": "Submit Attempt",
-			"request": {
-				"method": "POST",
-				"url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
-			}
-		}
-	]
+  "info": {
+    "_postman_id": "devment-clean-attempt",
+    "name": "Dev-ment - Attempt APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Candidate-only timed assessment attempts. Start requires an accepted invitation. Answers use one of three strict shapes (MCQ, text, code)."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{candidateToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Start Attempt",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"invitationId\": \"{{invitationId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/attempts/start",
+        "description": "Candidate only; valid ACCEPTED invitation required. An attempt cannot be started twice."
+      }
+    },
+    {
+      "name": "Get Attempt",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/attempts/{{attemptId}}"
+      }
+    },
+    {
+      "name": "Save Answer",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"selectedOptionIds\": [\"{{optionId}}\"]\n}"
+        },
+        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+        "description": "MCQ example: selectedOptionIds must be an array of option UUIDs. Choose a request variant matching the actual question type; save only one allowed shape."
+      }
+    },
+    {
+      "name": "Record Proctor Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"eventType\": \"TAB_HIDDEN\",\n  \"occurredAt\": \"{{$isoTimestamp}}\"\n}"
+        },
+        "url": "{{baseUrl}}/attempts/{{attemptId}}/proctor-events",
+        "description": "Candidate only. Accepted eventType: TAB_HIDDEN, WINDOW_BLUR, FULLSCREEN_EXIT. occurredAt must include UTC offset; clientEventId must be unique."
+      }
+    },
+    {
+      "name": "Submit Attempt",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/attempts/{{attemptId}}/submit"
+      }
+    },
+    {
+      "name": "Save Text Answer",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+        "description": "Use for SHORT_TEXT and LONG_TEXT questions; do not include MCQ or coding fields.",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answerText\": \"This is my answer.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Save Coding Answer",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/attempts/{{attemptId}}/answers/{{assessmentQuestionId}}",
+        "description": "Use for CODING questions; language must be one allowed by that question.",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"codeAnswer\": \"console.log('hello');\",\n  \"language\": \"javascript\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    }
+  ]
 }
