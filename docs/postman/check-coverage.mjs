@@ -90,7 +90,7 @@ const variables = new Set([
 for (const item of modularItems) {
   const raw = JSON.stringify(item.request);
   for (const match of raw.matchAll(/\{\{([^{}]+)\}\}/g)) {
-    if (!variables.has(match[1])) {
+    if (!match[1].startsWith("$") && !variables.has(match[1])) {
       errors.push("Missing Postman variable: " + match[1]);
     }
   }
